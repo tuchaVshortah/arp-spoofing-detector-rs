@@ -2,8 +2,23 @@ use std::collections::HashMap;
 use std::net::Ipv4Addr;
 use std::process::Command;
 use std::str;
+use clap::Parser;
+
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    #[arg(short, long)]
+    service: bool,
+}
+
+
 
 fn main() {
+    let cli = Cli::parse();
+    if cli.service {
+        //do something
+    }
+
     let mut arp_cache: HashMap<Ipv4Addr, String> = HashMap::new();
     
     loop {
