@@ -4,7 +4,6 @@ use std::process::Command;
 use std::str;
 
 fn main() {
-    //test
     let mut arp_cache: HashMap<Ipv4Addr, String> = HashMap::new();
     
     loop {
