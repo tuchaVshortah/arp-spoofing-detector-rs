@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 windows-service = "0.6.0"
+clap = "4.1.8"
