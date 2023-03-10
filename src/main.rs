@@ -11,14 +11,7 @@ struct Cli {
     service: bool,
 }
 
-
-
-fn main() {
-    let cli = Cli::parse();
-    if cli.service {
-        //do something
-    }
-
+fn detector() {
     let mut arp_cache: HashMap<Ipv4Addr, String> = HashMap::new();
     
     loop {
@@ -51,4 +44,13 @@ fn main() {
 
         std::thread::sleep(std::time::Duration::from_secs(3));
     }
+}
+
+fn main() {
+    let cli = Cli::parse();
+    if cli.service {
+        println!("The service flag is set")
+    }
+
+    detector();
 }
