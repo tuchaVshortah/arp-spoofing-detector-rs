@@ -4,13 +4,24 @@ use std::process::Command;
 use std::str;
 use clap::Parser;
 
-#[derive(Parser)]
-#[command(author, version, about, long_about = None)]
-struct Cli {
-    #[arg(short, long)]
-    service: bool,
+
+//code for service runners
+#[macro_use]
+extern crate windows_service;
+
+use std::ffi::OsString;
+use windows_service::service_dispatcher;
+
+define_windows_service!(ffi_service_main, arp_service_main);
+
+
+fn arp_service_main(arguments: Vec<OsString>) {
+    detector();
 }
 
+
+
+//arp spoofing detector
 fn detector() {
     let mut arp_cache: HashMap<Ipv4Addr, String> = HashMap::new();
     
@@ -46,11 +57,28 @@ fn detector() {
     }
 }
 
-fn main() {
+
+
+//structure that handles CLI arguments/flags
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    #[arg(short, long)]
+    service: bool,
+}
+
+
+//the main function
+fn main() -> Result<(), windows_service::Error> {
     let cli = Cli::parse();
     if cli.service {
-        println!("The service flag is set")
+        // Register generated `ffi_service_main` with the system and start the service, blocking
+        // this thread until the service is stopped.
+        service_dispatcher::start("myservice", ffi_service_main)?;
+        Ok(())
+    } else {
+        detector();
+        Ok(())
     }
-
-    detector();
 }
+
