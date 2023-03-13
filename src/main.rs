@@ -68,7 +68,8 @@ struct Cli {
 }
 
 
-//the main function
+//the main functions
+#[cfg(windows)]
 fn main() -> Result<(), windows_service::Error> {
     let cli = Cli::parse();
     if cli.service {
@@ -82,3 +83,7 @@ fn main() -> Result<(), windows_service::Error> {
     }
 }
 
+#[cfg(not(windows))]
+fn main() {
+    panic!("This program is only intended to run on Windows.");
+}
