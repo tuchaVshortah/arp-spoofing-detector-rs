@@ -4,6 +4,25 @@ use std::process::Command;
 use std::str;
 use clap::Parser;
 
+//the main functions
+#[cfg(windows)]
+fn main() -> Result<(), windows_service::Error> {
+    let cli = Cli::parse();
+    if cli.service {
+        // Register generated `ffi_service_main` with the system and start the service, blocking
+        // this thread until the service is stopped.
+        service_dispatcher::start("arpdetectorservice", ffi_service_main)?;
+        Ok(())
+    } else {
+        detector();
+        Ok(())
+    }
+}
+
+#[cfg(not(windows))]
+fn main() {
+    panic!("This program is only intended to run on Windows.");
+}
 
 //code for service runners
 #[macro_use]
@@ -68,22 +87,3 @@ struct Cli {
 }
 
 
-//the main functions
-#[cfg(windows)]
-fn main() -> Result<(), windows_service::Error> {
-    let cli = Cli::parse();
-    if cli.service {
-        // Register generated `ffi_service_main` with the system and start the service, blocking
-        // this thread until the service is stopped.
-        service_dispatcher::start("arpdetectorservice", ffi_service_main)?;
-        Ok(())
-    } else {
-        detector();
-        Ok(())
-    }
-}
-
-#[cfg(not(windows))]
-fn main() {
-    panic!("This program is only intended to run on Windows.");
-}
