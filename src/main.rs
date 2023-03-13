@@ -74,7 +74,7 @@ fn main() -> Result<(), windows_service::Error> {
     if cli.service {
         // Register generated `ffi_service_main` with the system and start the service, blocking
         // this thread until the service is stopped.
-        service_dispatcher::start("myservice", ffi_service_main)?;
+        service_dispatcher::start("arpdetectorservice", ffi_service_main)?;
         Ok(())
     } else {
         detector();
