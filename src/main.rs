@@ -69,12 +69,20 @@ fn main() {
     let mutdelete_service_command = "sc.exe Delete \"ExampleService\"".split_whitespace();
 
     let cli = Cli::parse();
-    if cli.install {
+    if cli.install_service {
         Command::new("powershell")
             .args(installation_command)
             .output()
             .expect("Failed to execute the install command");
+    } else if cli.check_service {
+        //do something
+    } else if cli.delete_service {
+        //do something
+    } else if cli.start_service {
+        //do something
+    } else if cli.stop_service {
+        //do something
     } else {
-        detector();
+        detector()
     }
 }
