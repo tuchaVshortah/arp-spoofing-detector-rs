@@ -49,6 +49,7 @@ fn detector() {
 struct Cli {
     #[arg(short, long)]
     service: bool,
+    #[arg(short, long)]
     install: bool
 }
 
@@ -62,8 +63,8 @@ fn main() {
 
     let cli = Cli::parse();
     if cli.install {
-        Command::new("")
-            .args([""])
+        Command::new(installation_command.nth(0).unwrap())
+            .args(installation_command)
             .output()
             .expect("Failed to execute the install command");
     } else {
