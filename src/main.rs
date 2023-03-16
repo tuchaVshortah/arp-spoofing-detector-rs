@@ -55,14 +55,14 @@ struct Cli {
 
 //the main function
 fn main() {
-    let installation_command = "New-Service -Name \"ExampleService\" -DisplayName \"Example Service\" -Description \"An Example Service\" -StartupType Manual -BinaryPathName \"Path-To-App.exe\"";
-    let start_service_command = "Start-Service -Name \"ExampleService\"";
-    let stop_service_command = "Stop-Service -Name \"ExampleService\"";
-    let delete_service_command = "sc.exe Delete \"ExampleService\"";
+    let installation_command = "New-Service -Name \"ExampleService\" -DisplayName \"Example Service\" -Description \"An Example Service\" -StartupType Manual -BinaryPathName \"Path-To-App.exe\"".split_whitespace();
+    let start_service_command = "Start-Service -Name \"ExampleService\"".split_whitespace();
+    let stop_service_command = "Stop-Service -Name \"ExampleService\"".split_whitespace();
+    let delete_service_command = "sc.exe Delete \"ExampleService\"".split_whitespace();
 
     let cli = Cli::parse();
     if cli.install {
-        Command::new("arp")
+        Command::new("")
             .args([""])
             .output()
             .expect("Failed to execute the install command");
