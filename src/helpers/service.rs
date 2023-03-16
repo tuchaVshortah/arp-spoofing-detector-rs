@@ -1,1 +1,0 @@
-//Here will be code for the Windows service
