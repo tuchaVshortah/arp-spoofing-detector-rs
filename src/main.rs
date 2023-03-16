@@ -63,10 +63,10 @@ struct Cli {
 
 //the main function
 fn main() {
-    let mut installation_command = "New-Service -Name \"ExampleService\" -DisplayName \"Example Service\" -Description \"An Example Service\" -StartupType Manual -BinaryPathName \"arp-spoofing-detector.exe\"".split_whitespace();
-    let mut start_service_command = "Start-Service -Name \"ExampleService\"".split_whitespace();
-    let mut stop_service_command = "Stop-Service -Name \"ExampleService\"".split_whitespace();
-    let mutdelete_service_command = "sc.exe Delete \"ExampleService\"".split_whitespace();
+    let mut installation_command = "New-Service -Name \"ArpSpoofDetectService\" -DisplayName \"ARP spoofing detector service\" -Description \"A service that detects ARP spoofing in your network\" -StartupType Manual -BinaryPathName \"arp-spoofing-detector.exe\"".split_whitespace();
+    let mut start_service_command = "Start-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
+    let mut stop_service_command = "Stop-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
+    let mutdelete_service_command = "sc.exe Delete \"ArpSpoofDetectService\"".split_whitespace();
 
     let cli = Cli::parse();
     if cli.install_service {
