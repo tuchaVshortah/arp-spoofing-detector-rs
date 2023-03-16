@@ -51,7 +51,10 @@ struct Cli {
     install: bool,
     #[arg(short, long)]
     start_service: bool,
-    
+    #[arg(short, long)]
+    stop_service: bool,
+    #[arg(short, long)]
+    delete_service: bool,
 }
 
 
