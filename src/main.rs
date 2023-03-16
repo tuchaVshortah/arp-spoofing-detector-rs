@@ -66,7 +66,7 @@ fn main() {
     let mut installation_command = "New-Service -Name \"ArpSpoofDetectService\" -DisplayName \"ARP spoofing detector service\" -Description \"A service that detects ARP spoofing in your network\" -StartupType Manual -BinaryPathName \"arp-spoofing-detector.exe\"".split_whitespace();
     let mut start_service_command = "Start-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
     let mut stop_service_command = "Stop-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
-    let mutdelete_service_command = "sc.exe Delete \"ArpSpoofDetectService\"".split_whitespace();
+    let mut delete_service_command = "sc.exe Delete \"ArpSpoofDetectService\"".split_whitespace();
 
     let cli = Cli::parse();
     if cli.install_service {
