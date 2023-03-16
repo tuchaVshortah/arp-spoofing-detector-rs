@@ -48,13 +48,16 @@ fn detector() {
 #[command(author, version, about, long_about = None)]
 struct Cli {
     #[arg(short, long)]
-    install: bool,
+    install_service: bool,
+    #[arg(short, long)]
+    check_service: bool,
+    #[arg(short, long)]
+    delete_service: bool,
     #[arg(short, long)]
     start_service: bool,
     #[arg(short, long)]
     stop_service: bool,
-    #[arg(short, long)]
-    delete_service: bool,
+    
 }
 
 
