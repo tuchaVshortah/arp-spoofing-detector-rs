@@ -63,7 +63,7 @@ struct Cli {
 
 //the main function
 fn main() {
-    let mut installation_command = "New-Service -Name \"ArpSpoofDetectService\" -DisplayName \"ARP spoofing detector service\" -Description \"A service that detects ARP spoofing in your network\" -StartupType Manual -BinaryPathName \"arp-spoofing-detector.exe\"".split_whitespace();
+    let mut install_service_command = "New-Service -Name \"ArpSpoofDetectService\" -DisplayName \"ARP spoofing detector service\" -Description \"A service that detects ARP spoofing in your network\" -StartupType Manual -BinaryPathName \"arp-spoofing-detector.exe\"".split_whitespace();
     let mut start_service_command = "Start-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
     let mut stop_service_command = "Stop-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
     let mut delete_service_command = "sc.exe Delete \"ArpSpoofDetectService\"".split_whitespace();
@@ -71,11 +71,11 @@ fn main() {
     let cli = Cli::parse();
     if cli.install_service {
         Command::new("powershell")
-            .args(installation_command)
+            .args(install_service_command)
             .output()
             .expect("Failed to execute the install command");
     } else if cli.check_service {
-        //do something
+        
     } else if cli.delete_service {
         //do something
     } else if cli.start_service {
