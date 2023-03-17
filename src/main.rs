@@ -62,7 +62,7 @@ struct Cli {
 
 
 fn checkServiceInstalled() -> bool {
-    let mut check_service_command = "& { $service = Get-Service -Name \"ArpSpoofDetectService\" -ErrorAction SilentlyContinue\nWrite-Output $service.Length }";
+    let mut check_service_command = "& { $service = Get-Service -Name \"ArpSpoofDetectService\" -ErrorAction SilentlyContinue ; Write-Output $service.Length }";
     println!("The command is this:\n{}\n------------\n", check_service_command);
     
     let mut output =  Command::new("powershell")
@@ -89,7 +89,11 @@ fn main() {
             .output()
             .expect("Failed to execute the install command");
     } else if cli.check_service {
-        //do something
+        if checkServiceInstalled() {
+            println!("The \"ArpSpoofDetectService\" service is installed")
+        } else {
+            println!("The \"ArpSpoofDetectService\" service is not installed")
+        }
     } else if cli.delete_service {
         //do something
     } else if cli.start_service {
