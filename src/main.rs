@@ -63,7 +63,6 @@ struct Cli {
 
 fn checkServiceInstalled() -> bool {
     let mut check_service_command = "& { $service = Get-Service -Name \"ArpSpoofDetectService\" -ErrorAction SilentlyContinue ; Write-Output $service.Length }";
-    println!("The command is this:\n{}\n------------\n", check_service_command);
     
     let mut output =  Command::new("powershell")
         .args(["-Command", check_service_command])
