@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::net::Ipv4Addr;
-use std::process::Command;
+use std::process::{Command, Output};
 use std::str;
 use clap::Parser;
 
@@ -61,6 +61,20 @@ struct Cli {
 }
 
 
+fn checkServiceInstalled() -> bool {
+    let mut check_service_command = "& { $service = Get-Service -Name ExampleService -ErrorAction SilentlyContinue\nWrite-Output $service.Length }";
+    println!("The command is this:\n{}\n------------\n", check_service_command);
+    
+    let mut output =  Command::new("powershell")
+        .args(["-Command", check_service_command])
+        .output()
+        .expect("Failed to execute the checking command");
+
+    let mut content = str::from_utf8(&output.stdout).unwrap();
+    content.contains("1")
+}
+
+
 //the main function
 fn main() {
     let mut install_service_command = "New-Service -Name \"ArpSpoofDetectService\" -DisplayName \"ARP spoofing detector service\" -Description \"A service that detects ARP spoofing in your network\" -StartupType Manual -BinaryPathName \"arp-spoofing-detector.exe\"".split_whitespace();
@@ -75,7 +89,7 @@ fn main() {
             .output()
             .expect("Failed to execute the install command");
     } else if cli.check_service {
-        
+        //do something
     } else if cli.delete_service {
         //do something
     } else if cli.start_service {
