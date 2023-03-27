@@ -94,10 +94,14 @@ fn main() {
             println!("The \"ArpSpoofDetectService\" service is not installed")
         }
     } else if cli.delete_service {
-        Command::new("powershell")
+        if !checkServiceInstalled() {
+            panic!("Cannot delete service: Not Installed")
+        } else {
+            Command::new("powershell")
             .args(delete_service_command)
             .output()
             .expect("Failed to execute the delete service command");
+        }
     } else if cli.start_service {
         Command::new("powershell")
             .args(start_service_command)
