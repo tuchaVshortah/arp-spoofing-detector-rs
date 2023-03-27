@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::net::Ipv4Addr;
-use std::process::{Command};
+use std::process::Command;
 use std::str;
 use clap::Parser;
 
