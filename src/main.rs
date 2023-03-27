@@ -57,7 +57,10 @@ struct Cli {
     start_service: bool,
     #[arg(short, long)]
     stop_service: bool,
-    
+    #[arg(short, long, default_value_t = String::from("0.0.0.0"))]
+    syslog_ip: String,
+    #[arg(short, long, default_value_t = String::from("514"))]
+    syslog_port: String,    
 }
 
 
@@ -82,6 +85,8 @@ fn main() {
     let mut delete_service_command = "sc.exe Delete \"ArpSpoofDetectService\"".split_whitespace();
 
     let cli = Cli::parse();
+    //println!("{}", cli.syslog_ip);
+    //println!("{}", cli.syslog_port);
     if cli.install_service {
         Command::new("powershell")
             .args(install_service_command)
