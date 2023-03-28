@@ -7,7 +7,7 @@ use clap::Parser;
 #[allow(unused, unused_variables, dead_code)]
 
 
-async fn logsender(syslog_ip: &String, syslog_port: &String, message: &HashMap<String, String>) -> Result<(), Box<dyn std::error::Error>> {
+async fn logsender(syslog_ip: &String, syslog_port: &String, message: &HashMap<&str, &str>) -> Result<(), Box<dyn std::error::Error>> {
     let url = format!("http://{}:{}/", syslog_ip, syslog_port);
 
     assert_eq!(url, String::from("http://0.0.0.0:514/"));
@@ -42,6 +42,18 @@ fn detector(syslog_ip: String, syslog_port: String) {
 
                 if arp_cache.contains_key(&ip) && arp_cache.get(&ip).unwrap() != &mac {
                     println!("ARP spoofing detected for IP address {}", ip);
+
+
+                    let mut message = HashMap::new();
+                    message.insert("description", "ARP spoofing detected");
+
+                    let ipString = ip.to_string();
+                    message.insert("ip", ipString.as_str());
+
+                    message.insert("First MAC", arp_cache.get(&ip).unwrap());
+                    message.insert("Second MAC", mac);
+                    logsender(&syslog_ip, &syslog_port, &message);
+
                     is_spoofed = true;
                 }
 
