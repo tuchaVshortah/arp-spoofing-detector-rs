@@ -4,6 +4,8 @@ use std::process::Command;
 use std::str;
 use clap::Parser;
 
+#[allow(unused, unused_variables, dead_code)]
+
 
 async fn logsender(syslog_ip: &String, syslog_port: &String, message: &HashMap<String, String>) -> Result<(), Box<dyn std::error::Error>> {
     let url = format!("http://{}:{}/", syslog_ip, syslog_port);
