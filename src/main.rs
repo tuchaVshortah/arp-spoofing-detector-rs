@@ -8,6 +8,8 @@ use clap::Parser;
 async fn logsender(syslog_ip: &String, syslog_port: &String, message: &HashMap<String, String>) -> Result<(), Box<dyn std::error::Error>> {
     let url = format!("http://{}:{}/", syslog_ip, syslog_port);
 
+    assert_eq!(url, String::from("http://0.0.0.0:514/"));
+
     let client = reqwest::Client::new();
 
     let resp = client.post(url).json(message).send().await?;
@@ -76,25 +78,25 @@ struct Cli {
 }
 
 
-fn checkServiceInstalled() -> bool {
-    let mut check_service_command = "& { $service = Get-Service -Name \"ArpSpoofDetectService\" -ErrorAction SilentlyContinue ; Write-Output $service.Length }";
+fn check_service_installed() -> bool {
+    let  check_service_command = "& { $service = Get-Service -Name \"ArpSpoofDetectService\" -ErrorAction SilentlyContinue ; Write-Output $service.Length }";
     
-    let mut output =  Command::new("powershell")
+    let output =  Command::new("powershell")
         .args(["-Command", check_service_command])
         .output()
         .expect("Failed to execute the checking command");
 
-    let mut content = str::from_utf8(&output.stdout).unwrap();
+    let content = str::from_utf8(&output.stdout).unwrap();
     content.contains("1")
 }
 
 
 //the main function
 fn main() {
-    let mut install_service_command = "New-Service -Name \"ArpSpoofDetectService\" -DisplayName \"ARP spoofing detector service\" -Description \"A service that detects ARP spoofing in your network\" -StartupType Manual -BinaryPathName \"arp-spoofing-detector.exe\"".split_whitespace();
-    let mut start_service_command = "Start-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
-    let mut stop_service_command = "Stop-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
-    let mut delete_service_command = "sc.exe Delete \"ArpSpoofDetectService\"".split_whitespace();
+    let install_service_command = "New-Service -Name \"ArpSpoofDetectService\" -DisplayName \"ARP spoofing detector service\" -Description \"A service that detects ARP spoofing in your network\" -StartupType Manual -BinaryPathName \"arp-spoofing-detector.exe\"".split_whitespace();
+    let start_service_command = "Start-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
+    let stop_service_command = "Stop-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
+    let delete_service_command = "sc.exe Delete \"ArpSpoofDetectService\"".split_whitespace();
 
     let cli = Cli::parse();
     //println!("{}", cli.syslog_ip);
@@ -105,13 +107,13 @@ fn main() {
             .output()
             .expect("Failed to execute the install command");
     } else if cli.check_service {
-        if checkServiceInstalled() {
+        if check_service_installed() {
             println!("The \"ArpSpoofDetectService\" service is installed")
         } else {
             println!("The \"ArpSpoofDetectService\" service is not installed")
         }
     } else if cli.delete_service {
-        if !checkServiceInstalled() {
+        if !check_service_installed() {
             panic!("Cannot delete service: Not Installed")
         } else {
             Command::new("powershell")
