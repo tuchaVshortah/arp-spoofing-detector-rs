@@ -5,8 +5,20 @@ use std::str;
 use clap::Parser;
 
 
+async fn logsender(syslog_ip: &String, syslog_port: &String, message: &HashMap<String, String>) -> Result<(), Box<dyn std::error::Error>> {
+    let url = format!("http://{}:{}/", syslog_ip, syslog_port);
+
+    let client = reqwest::Client::new();
+
+    let resp = client.post(url).json(message).send().await?;
+    println!("{:#?}", resp);
+    Ok(())
+}
+
+
+
 //arp spoofing detector
-fn detector() {
+fn detector(syslog_ip: String, syslog_port: String) {
     let mut arp_cache: HashMap<Ipv4Addr, String> = HashMap::new();
     
     loop {
@@ -118,6 +130,6 @@ fn main() {
             .output()
             .expect("Failed to execute the stop service command");
     } else {
-        detector()
+        detector(cli.syslog_ip, cli.syslog_port)
     }
 }
