@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::error::Error;
 use std::net::Ipv4Addr;
 use std::process::Command;
 use std::str;
@@ -6,24 +7,23 @@ use clap::Parser;
 
 #[allow(unused, unused_variables, dead_code)]
 
-async fn logsender(syslog_ip: &String, syslog_port: &String, message: &HashMap<&str, &str>) -> Result<(), Box<dyn std::error::Error>> {
-    let url = format!("http://{}:{}/", syslog_ip, syslog_port);
+fn logsender(syslog_ip: &String, syslog_port: &String, message: &HashMap<&str, &str>) -> Result<(), Box<dyn std::error::Error>> {
+    let url = format!("http://{}:{}", syslog_ip, syslog_port);
 
-    assert_eq!(url, String::from("http://0.0.0.0:514/"));
+    let client = reqwest::blocking::Client::new();
 
-    let client = reqwest::Client::new();
-
-    let resp = client.post(url).json(message).send().await?;
-    println!("{:#?}", resp);
-    Ok(())
+    if let Err(error) = client.post(url).json(message).send() {
+        Err(Box::new(error))
+    } else {
+        Ok(())
+    }
 }
 
 
 
 //arp spoofing detector
-fn detector(syslog_ip: String, syslog_port: String) {
+fn detector(syslog_ip: String, syslog_port: String, timeout: f32) -> Result<(), Box<dyn std::error::Error>> {
     let mut arp_cache: HashMap<Ipv4Addr, String> = HashMap::new();
-    
     loop {
         let output = Command::new("arp")
             .arg("-a")
@@ -51,7 +51,9 @@ fn detector(syslog_ip: String, syslog_port: String) {
 
                     message.insert("First MAC", arp_cache.get(&ip).unwrap());
                     message.insert("Second MAC", &mac);
-                    logsender(&syslog_ip, &syslog_port, &message);
+                    if let Err(error) = logsender(&syslog_ip, &syslog_port, &message) {
+                        return Err(error);
+                    }
 
                     is_spoofed = true;
                 }
@@ -61,9 +63,15 @@ fn detector(syslog_ip: String, syslog_port: String) {
 
         if !is_spoofed {
             println!("No ARP spoofing detected");
+            
+            let mut message = HashMap::new();
+            message.insert("description", "ARP spoofing not detected");
+            if let Err(error) = logsender(&syslog_ip, &syslog_port, &message) {
+                return Err(error);
+            }
         }
 
-        std::thread::sleep(std::time::Duration::from_secs(3));
+        std::thread::sleep(std::time::Duration::from_secs_f32(timeout));
     }
 }
 
@@ -83,10 +91,12 @@ struct Cli {
     start_service: bool,
     #[arg(short, long)]
     stop_service: bool,
-    #[arg(short, long, default_value_t = String::from("0.0.0.0"))]
+    #[arg(short = 'S', long, default_value_t = String::from("127.0.0.1"))]
     syslog_ip: String,
-    #[arg(short, long, default_value_t = String::from("514"))]
-    syslog_port: String,    
+    #[arg(short = 's', long, default_value_t = String::from("1468"))]
+    syslog_port: String,
+    #[arg(short, long, default_value_t = 3.0)]
+    timeout: f32,   
 }
 
 
@@ -104,7 +114,8 @@ fn check_service_installed() -> bool {
 
 
 //the main function
-fn main() {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>>{
     let install_service_command = "New-Service -Name \"ArpSpoofDetectService\" -DisplayName \"ARP spoofing detector service\" -Description \"A service that detects ARP spoofing in your network\" -StartupType Manual -BinaryPathName \"arp-spoofing-detector.exe\"".split_whitespace();
     let start_service_command = "Start-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
     let stop_service_command = "Stop-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
@@ -113,6 +124,7 @@ fn main() {
     let cli = Cli::parse();
     //println!("{}", cli.syslog_ip);
     //println!("{}", cli.syslog_port);
+
     if cli.install_service {
         Command::new("powershell")
             .args(install_service_command)
@@ -144,6 +156,8 @@ fn main() {
             .output()
             .expect("Failed to execute the stop service command");
     } else {
-        detector(cli.syslog_ip, cli.syslog_port)
+    
+        return detector(cli.syslog_ip, cli.syslog_port, cli.timeout);
     }
+    Ok(())
 }
