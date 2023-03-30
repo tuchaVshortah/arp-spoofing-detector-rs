@@ -41,6 +41,8 @@ fn detector(syslog_ip: String, syslog_port: String, proto: Proto, timeout: f32) 
     let logger;
     
     if proto == Proto::Udp {
+        //local_ip has to be set to some value
+        //cli option is required to be added
 
         logger = match syslog::udp(formatter, local_ip, format!("{}:{}", syslog_ip, syslog_port)) {
 
