@@ -21,7 +21,7 @@ fn detector(options: LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
         //local_ip has to be set to some value
         //cli option is required to be added
 
-        logger = match syslog::udp(formatter, options.local_ip, format!("{}:{}", options.syslog_ip, options.syslog_port)) {
+        logger = match syslog::udp(formatter, format!("{}:{}", options.local_ip, options.local_port), format!("{}:{}", options.syslog_ip, options.syslog_port)) {
 
             Err(e) => { println!("impossible to connect to syslog: {:?}", e); return Ok(()); },
             Ok(logger) => logger,
