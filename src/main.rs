@@ -4,19 +4,14 @@ use std::net::Ipv4Addr;
 use std::process::Command;
 use std::str;
 use clap::Parser;
+use serde_json::json;
 
 #[allow(unused, unused_variables, dead_code)]
 
 fn logsender(syslog_ip: &String, syslog_port: &String, message: &HashMap<&str, &str>) -> Result<(), Box<dyn std::error::Error>> {
-    let url = format!("http://{}:{}", syslog_ip, syslog_port);
 
-    let client = reqwest::blocking::Client::new();
-
-    if let Err(error) = client.post(url).json(message).send() {
-        Err(Box::new(error))
-    } else {
-        Ok(())
-    }
+    let json_message = json!(message).to_string();
+    Ok(())
 }
 
 
@@ -25,6 +20,7 @@ fn logsender(syslog_ip: &String, syslog_port: &String, message: &HashMap<&str, &
 fn detector(syslog_ip: String, syslog_port: String, timeout: f32) -> Result<(), Box<dyn std::error::Error>> {
     let mut arp_cache: HashMap<Ipv4Addr, String> = HashMap::new();
     loop {
+        println!("The detector loop has started");
         let output = Command::new("arp")
             .arg("-a")
             .output()
@@ -52,6 +48,7 @@ fn detector(syslog_ip: String, syslog_port: String, timeout: f32) -> Result<(), 
                     message.insert("First MAC", arp_cache.get(&ip).unwrap());
                     message.insert("Second MAC", &mac);
                     if let Err(error) = logsender(&syslog_ip, &syslog_port, &message) {
+                        println!("Error in the loop: {}", error);
                         return Err(error);
                     }
 
@@ -67,6 +64,7 @@ fn detector(syslog_ip: String, syslog_port: String, timeout: f32) -> Result<(), 
             let mut message = HashMap::new();
             message.insert("description", "ARP spoofing not detected");
             if let Err(error) = logsender(&syslog_ip, &syslog_port, &message) {
+                println!("Error in the loop: {}", error);
                 return Err(error);
             }
         }
@@ -114,8 +112,7 @@ fn check_service_installed() -> bool {
 
 
 //the main function
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>>{
+fn main() -> Result<(), Box<dyn Error>>{
     let install_service_command = "New-Service -Name \"ArpSpoofDetectService\" -DisplayName \"ARP spoofing detector service\" -Description \"A service that detects ARP spoofing in your network\" -StartupType Manual -BinaryPathName \"arp-spoofing-detector.exe\"".split_whitespace();
     let start_service_command = "Start-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
     let stop_service_command = "Stop-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
