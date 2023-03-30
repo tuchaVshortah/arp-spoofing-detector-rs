@@ -6,7 +6,7 @@ use std::str::{self, FromStr};
 use std::fmt::Display;
 use clap::Parser;
 use serde_json::json;
-use syslog::{Facility, Formatter5424};
+use syslog::{BasicLogger, Facility, Formatter5424};
 use log::{SetLoggerError, LevelFilter, info};
 
 #[allow(unused, unused_variables, dead_code)]
@@ -15,7 +15,7 @@ use log::{SetLoggerError, LevelFilter, info};
 fn detector(options: LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
     
     let formatter = Formatter5424::default();
-    let logger;
+    let mut logger;
     
     if options.proto == Proto::Udp {
         //local_ip has to be set to some value
@@ -70,6 +70,10 @@ fn detector(options: LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
                     message.insert("First MAC", arp_cache.get(&ip).unwrap());
                     message.insert("Second MAC", &mac);
 
+                    let json_message = json!(message).to_string();
+
+                    logger.warning(((1, HashMap::new(), json_message)));
+
                     is_spoofed = true;
                 }
                 arp_cache.insert(ip, mac);
@@ -81,6 +85,10 @@ fn detector(options: LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
             
             let mut message = HashMap::new();
             message.insert("description", "ARP spoofing not detected");
+            
+            let json_message = json!(message).to_string();
+
+            logger.warning(((1, HashMap::new(), json_message)));
             
         }
 
