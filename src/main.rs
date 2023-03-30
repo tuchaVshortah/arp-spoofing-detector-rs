@@ -6,23 +6,28 @@ use std::str::{self, FromStr};
 use std::fmt::Display;
 use clap::Parser;
 use serde_json::json;
+use syslog::Facility;
 
 #[allow(unused, unused_variables, dead_code)]
 
 fn logsender(syslog_ip: &String, syslog_port: &String, proto: &Proto, severity: SyslogLevels, message: &HashMap<&str, &str>) -> Result<(), Box<dyn std::error::Error>> {
     let json_message = json!(message).to_string();
 
+    /*
     let send_tcp_logs = format!(
-        "Import-Module SyslogMessage; \
+        "& {{ \
+        Import-Module SyslogMessage; \
         $server = \"{}\"; \
         $port = \"{}\"; \
         $message = \"{}\"; \
         $facility = \"Local0\"; \
         $severity = \"{}\"; \
         $protocol = \"{}\"; \
-        Send-SyslogMessage -Server $server -Port $port -Message $message -Facility $facility -Severity $severity -Protocol $protocol",
+        Send-SyslogMessage -Server $server -Port $port -Message $message -Facility $facility -Severity $severity -Protocol $protocol \
+        }}",
         syslog_ip, syslog_port, json_message, severity, proto.to_string()
     );
+    */
     
     Ok(())
 }
@@ -197,6 +202,10 @@ fn main() -> Result<(), Box<dyn Error>>{
     let start_service_command = "Start-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
     let stop_service_command = "Stop-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
     let delete_service_command = "sc.exe Delete \"ArpSpoofDetectService\"".split_whitespace();
+
+    syslog::init(Facility::LOG_USER,
+        log::LevelFilter::Debug,
+        Some("ARP_spoofing_detector"))?;
 
     let cli = Cli::parse();
     //println!("{}", cli.syslog_ip);
