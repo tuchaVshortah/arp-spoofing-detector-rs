@@ -11,40 +11,17 @@ use log::{SetLoggerError, LevelFilter, info};
 
 #[allow(unused, unused_variables, dead_code)]
 
-fn logsender(syslog_ip: &String, syslog_port: &String, proto: &Proto, severity: SyslogLevels, message: &HashMap<&str, &str>) -> Result<(), Box<dyn std::error::Error>> {
-    let json_message = json!(message).to_string();
-
-    /*
-    let send_tcp_logs = format!(
-        "& {{ \
-        Import-Module SyslogMessage; \
-        $server = \"{}\"; \
-        $port = \"{}\"; \
-        $message = \"{}\"; \
-        $facility = \"Local0\"; \
-        $severity = \"{}\"; \
-        $protocol = \"{}\"; \
-        Send-SyslogMessage -Server $server -Port $port -Message $message -Facility $facility -Severity $severity -Protocol $protocol \
-        }}",
-        syslog_ip, syslog_port, json_message, severity, proto.to_string()
-    );
-    */
-    
-    Ok(())
-}
-
-
 //arp spoofing detector
-fn detector(syslog_ip: String, syslog_port: String, proto: Proto, timeout: f32) -> Result<(), Box<dyn std::error::Error>> {
+fn detector(options: LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
     
     let formatter = Formatter5424::default();
     let logger;
     
-    if proto == Proto::Udp {
+    if options.proto == Proto::Udp {
         //local_ip has to be set to some value
         //cli option is required to be added
 
-        logger = match syslog::udp(formatter, local_ip, format!("{}:{}", syslog_ip, syslog_port)) {
+        logger = match syslog::udp(formatter, options.local_ip, format!("{}:{}", options.syslog_ip, options.syslog_port)) {
 
             Err(e) => { println!("impossible to connect to syslog: {:?}", e); return Ok(()); },
             Ok(logger) => logger,
@@ -53,7 +30,7 @@ fn detector(syslog_ip: String, syslog_port: String, proto: Proto, timeout: f32) 
 
     } else {
 
-        logger = match syslog::tcp(formatter, format!("{}:{}", syslog_ip, syslog_port)) {
+        logger = match syslog::tcp(formatter, format!("{}:{}", options.syslog_ip, options.syslog_port)) {
 
             Err(e) => { println!("impossible to connect to syslog: {:?}", e); return Ok(()); },
             Ok(logger) => logger,
@@ -92,10 +69,6 @@ fn detector(syslog_ip: String, syslog_port: String, proto: Proto, timeout: f32) 
 
                     message.insert("First MAC", arp_cache.get(&ip).unwrap());
                     message.insert("Second MAC", &mac);
-                    if let Err(error) = logsender(&syslog_ip, &syslog_port, &proto, SyslogLevels::Warning,&message) {
-                        println!("Error in the loop: {}", error);
-                        return Err(error);
-                    }
 
                     is_spoofed = true;
                 }
@@ -108,13 +81,10 @@ fn detector(syslog_ip: String, syslog_port: String, proto: Proto, timeout: f32) 
             
             let mut message = HashMap::new();
             message.insert("description", "ARP spoofing not detected");
-            if let Err(error) = logsender(&syslog_ip, &syslog_port, &proto,SyslogLevels::Informational, &message) {
-                println!("Error in the loop: {}", error);
-                return Err(error);
-            }
+            
         }
 
-        std::thread::sleep(std::time::Duration::from_secs_f32(timeout));
+        std::thread::sleep(std::time::Duration::from_secs_f32(options.timeout));
     }
 }
 
@@ -228,6 +198,16 @@ fn check_service_installed() -> bool {
 }
 
 
+struct LoggerOptions {
+    syslog_ip: String,
+    syslog_port: String,
+    proto: Proto,
+    local_ip: String,
+    local_port: String,
+    timeout: f32,
+}
+
+
 //the main function
 fn main() -> Result<(), Box<dyn Error>>{
     let install_service_command = "New-Service -Name \"ArpSpoofDetectService\" -DisplayName \"ARP spoofing detector service\" -Description \"A service that detects ARP spoofing in your network\" -StartupType Manual -BinaryPathName \"arp-spoofing-detector.exe\"".split_whitespace();
@@ -271,9 +251,16 @@ fn main() -> Result<(), Box<dyn Error>>{
             .expect("Failed to execute the stop service command");
     } else {
 
-        
+        let options = LoggerOptions {
+            syslog_ip: cli.syslog_ip.to_string(),
+            syslog_port: cli.syslog_port,
+            proto: cli.proto,
+            local_ip: cli.local_ip.to_string(),
+            local_port: cli.local_port,
+            timeout: cli.timeout,
+        };
 
-        return detector(cli.syslog_ip.to_string(), cli.syslog_port, cli.proto, cli.timeout);
+        return detector(options);
         
     }
     Ok(())
