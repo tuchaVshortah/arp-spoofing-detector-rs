@@ -200,12 +200,16 @@ struct Cli {
     start_service: bool,
     #[arg(short = 's', long)]
     stop_service: bool,
-    #[clap(short, long, value_name="proto", default_value="udp")]
+    #[clap(short, long, default_value="udp")]
     proto: Proto,
     #[arg(short = 'a', long, default_value_t = Ipv4Addr::from_str("127.0.0.1").unwrap())]
     syslog_ip: Ipv4Addr,
     #[arg(short = 'p', long, default_value_t = String::from("1468"))]
     syslog_port: String,
+    #[arg(short, long, default_value_t = Ipv4Addr::from_str("127.0.0.1").unwrap())]
+    local_ip: Ipv4Addr,
+    #[arg(short = 'b', long, default_value_t = String::from("9999"))]
+    local_port: String,
     #[arg(short, long, default_value_t = 3.0)]
     timeout: f32,   
 }
@@ -266,6 +270,8 @@ fn main() -> Result<(), Box<dyn Error>>{
             .output()
             .expect("Failed to execute the stop service command");
     } else {
+
+        
 
         return detector(cli.syslog_ip.to_string(), cli.syslog_port, cli.proto, cli.timeout);
         
