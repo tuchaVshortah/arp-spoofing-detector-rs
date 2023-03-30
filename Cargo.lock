@@ -47,6 +47,7 @@ name = "arp-spoofing-detector"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "log",
  "serde_json",
  "syslog",
 ]
