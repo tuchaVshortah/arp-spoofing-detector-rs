@@ -6,7 +6,8 @@ use std::str::{self, FromStr};
 use std::fmt::Display;
 use clap::Parser;
 use serde_json::json;
-use syslog::Facility;
+use syslog::{Facility, Formatter5424};
+use log::{SetLoggerError, LevelFilter, info};
 
 #[allow(unused, unused_variables, dead_code)]
 
@@ -35,6 +36,31 @@ fn logsender(syslog_ip: &String, syslog_port: &String, proto: &Proto, severity: 
 
 //arp spoofing detector
 fn detector(syslog_ip: String, syslog_port: String, proto: Proto, timeout: f32) -> Result<(), Box<dyn std::error::Error>> {
+    
+    let formatter = Formatter5424::default();
+    let logger;
+    
+    if proto == Proto::Udp {
+
+        logger = match syslog::udp(formatter, local_ip, format!("{}:{}", syslog_ip, syslog_port)) {
+
+            Err(e) => { println!("impossible to connect to syslog: {:?}", e); return Ok(()); },
+            Ok(logger) => logger,
+
+        };
+
+    } else {
+
+        logger = match syslog::tcp(formatter, format!("{}:{}", syslog_ip, syslog_port)) {
+
+            Err(e) => { println!("impossible to connect to syslog: {:?}", e); return Ok(()); },
+            Ok(logger) => logger,
+
+        };
+
+    }
+
+    
     let mut arp_cache: HashMap<Ipv4Addr, String> = HashMap::new();
     loop {
         println!("The detector loop has started");
@@ -202,10 +228,6 @@ fn main() -> Result<(), Box<dyn Error>>{
     let start_service_command = "Start-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
     let stop_service_command = "Stop-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
     let delete_service_command = "sc.exe Delete \"ArpSpoofDetectService\"".split_whitespace();
-
-    syslog::init(Facility::LOG_USER,
-        log::LevelFilter::Debug,
-        Some("ARP_spoofing_detector"))?;
 
     let cli = Cli::parse();
     //println!("{}", cli.syslog_ip);
