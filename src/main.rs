@@ -3,21 +3,33 @@ use std::error::Error;
 use std::net::Ipv4Addr;
 use std::process::Command;
 use std::str::{self, FromStr};
+use std::fmt::Display;
 use clap::Parser;
 use serde_json::json;
 
 #[allow(unused, unused_variables, dead_code)]
 
-fn logsender(syslog_ip: &String, syslog_port: &String, message: &HashMap<&str, &str>) -> Result<(), Box<dyn std::error::Error>> {
-
+fn logsender(syslog_ip: &String, syslog_port: &String, proto: &Proto, severity: SyslogLevels, message: &HashMap<&str, &str>) -> Result<(), Box<dyn std::error::Error>> {
     let json_message = json!(message).to_string();
+
+    let send_tcp_logs = format!(
+        "Import-Module SyslogMessage; \
+        $server = \"{}\"; \
+        $port = \"{}\"; \
+        $message = \"{}\"; \
+        $facility = \"Local0\"; \
+        $severity = \"{}\"; \
+        $protocol = \"{}\"; \
+        Send-SyslogMessage -Server $server -Port $port -Message $message -Facility $facility -Severity $severity -Protocol $protocol",
+        syslog_ip, syslog_port, json_message, severity, proto.to_string()
+    );
+    
     Ok(())
 }
 
 
-
 //arp spoofing detector
-fn detector(syslog_ip: String, syslog_port: String, timeout: f32) -> Result<(), Box<dyn std::error::Error>> {
+fn detector(syslog_ip: String, syslog_port: String, proto: Proto, timeout: f32) -> Result<(), Box<dyn std::error::Error>> {
     let mut arp_cache: HashMap<Ipv4Addr, String> = HashMap::new();
     loop {
         println!("The detector loop has started");
@@ -47,7 +59,7 @@ fn detector(syslog_ip: String, syslog_port: String, timeout: f32) -> Result<(), 
 
                     message.insert("First MAC", arp_cache.get(&ip).unwrap());
                     message.insert("Second MAC", &mac);
-                    if let Err(error) = logsender(&syslog_ip, &syslog_port, &message) {
+                    if let Err(error) = logsender(&syslog_ip, &syslog_port, &proto, SyslogLevels::Warning,&message) {
                         println!("Error in the loop: {}", error);
                         return Err(error);
                     }
@@ -63,7 +75,7 @@ fn detector(syslog_ip: String, syslog_port: String, timeout: f32) -> Result<(), 
             
             let mut message = HashMap::new();
             message.insert("description", "ARP spoofing not detected");
-            if let Err(error) = logsender(&syslog_ip, &syslog_port, &message) {
+            if let Err(error) = logsender(&syslog_ip, &syslog_port, &proto,SyslogLevels::Informational, &message) {
                 println!("Error in the loop: {}", error);
                 return Err(error);
             }
@@ -74,6 +86,72 @@ fn detector(syslog_ip: String, syslog_port: String, timeout: f32) -> Result<(), 
 }
 
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+enum Proto {
+    Udp,
+    Tcp,
+}
+
+impl Default for Proto {
+    fn default() -> Self {
+        Proto::Udp
+    }
+}
+
+impl FromStr for Proto {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "udp" => Ok(Proto::Udp),
+            "tcp" => Ok(Proto::Tcp),
+            _ => Err(format!("Invalid protocol type: {}", s)),
+        }
+    }
+}
+
+impl Display for Proto {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        
+        match self {
+
+            Proto::Udp => write!(f, "Udp"),
+            Proto::Tcp => write!(f, "Tcp"),
+
+        }
+
+    }
+}
+
+
+enum SyslogLevels {
+    Emergency,
+    Alert,
+    Critical,
+    Error,
+    Warning,
+    Notice,
+    Informational,
+    Debug 
+}
+
+impl Display for SyslogLevels {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        
+        match self {
+
+            SyslogLevels::Emergency => write!(f, "Emergency"),
+            SyslogLevels::Alert => write!(f, "Alert"),
+            SyslogLevels::Critical => write!(f, "Critical"),
+            SyslogLevels::Error => write!(f, "Error"),
+            SyslogLevels::Warning => write!(f, "Warning"),
+            SyslogLevels::Notice => write!(f, "Notice"),
+            SyslogLevels::Informational => write!(f, "Informational"),
+            SyslogLevels::Debug => write!(f, "Debug"),
+
+        }
+
+    }
+}
 
 //structure that handles CLI arguments/flags
 #[derive(Parser)]
@@ -89,6 +167,8 @@ struct Cli {
     start_service: bool,
     #[arg(short = 's', long)]
     stop_service: bool,
+    #[clap(short, long, value_name="proto", default_value="udp")]
+    proto: Proto,
     #[arg(short = 'a', long, default_value_t = Ipv4Addr::from_str("127.0.0.1").unwrap())]
     syslog_ip: Ipv4Addr,
     #[arg(short = 'p', long, default_value_t = String::from("1468"))]
@@ -153,8 +233,9 @@ fn main() -> Result<(), Box<dyn Error>>{
             .output()
             .expect("Failed to execute the stop service command");
     } else {
+
+        return detector(cli.syslog_ip.to_string(), cli.syslog_port, cli.proto, cli.timeout);
         
-        return detector(cli.syslog_ip.to_string(), cli.syslog_port, cli.timeout);
     }
     Ok(())
 }
