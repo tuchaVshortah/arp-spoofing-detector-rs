@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::net::Ipv4Addr;
 use std::process::Command;
-use std::str;
+use std::str::{self, FromStr};
 use clap::Parser;
 use serde_json::json;
 
@@ -89,8 +89,8 @@ struct Cli {
     start_service: bool,
     #[arg(short, long)]
     stop_service: bool,
-    #[arg(short = 'S', long, default_value_t = String::from("127.0.0.1"))]
-    syslog_ip: String,
+    #[arg(short = 'S', long, default_value_t = Ipv4Addr::from_str("127.0.0.1").unwrap())]
+    syslog_ip: Ipv4Addr,
     #[arg(short = 's', long, default_value_t = String::from("1468"))]
     syslog_port: String,
     #[arg(short, long, default_value_t = 3.0)]
@@ -153,8 +153,8 @@ fn main() -> Result<(), Box<dyn Error>>{
             .output()
             .expect("Failed to execute the stop service command");
     } else {
-    
-        return detector(cli.syslog_ip, cli.syslog_port, cli.timeout);
+        
+        return detector(cli.syslog_ip.to_string(), cli.syslog_port, cli.timeout);
     }
     Ok(())
 }
