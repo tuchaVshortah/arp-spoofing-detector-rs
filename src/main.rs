@@ -5,7 +5,7 @@ use std::process::Command;
 use std::str::{self, FromStr};
 use std::fmt::Display;
 use clap::Parser;
-use serde_json::json;
+use serde_json::{json, error};
 use syslog::{BasicLogger, Facility, Formatter5424};
 use log::{SetLoggerError, LevelFilter, info};
 
@@ -23,7 +23,7 @@ fn detector(options: LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
 
         logger = match syslog::udp(formatter, format!("{}:{}", options.local_ip, options.local_port), format!("{}:{}", options.syslog_ip, options.syslog_port)) {
 
-            Err(e) => { println!("impossible to connect to syslog: {:?}", e); return Ok(()); },
+            Err(e) => { println!("impossible to connect to syslog: {:?}", e); return Err(Box::new(e)); },
             Ok(logger) => logger,
 
         };
@@ -32,7 +32,7 @@ fn detector(options: LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
 
         logger = match syslog::tcp(formatter, format!("{}:{}", options.syslog_ip, options.syslog_port)) {
 
-            Err(e) => { println!("impossible to connect to syslog: {:?}", e); return Ok(()); },
+            Err(e) => { println!("impossible to connect to syslog: {:?}", e); return Err(Box::new(e)); },
             Ok(logger) => logger,
 
         };
