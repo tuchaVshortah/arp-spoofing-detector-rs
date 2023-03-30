@@ -79,19 +79,19 @@ fn detector(syslog_ip: String, syslog_port: String, timeout: f32) -> Result<(), 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
-    #[arg(short, long)]
+    #[arg(short = 'i', long)]
     install_service: bool,
-    #[arg(short, long)]
+    #[arg(short = 'c', long)]
     check_service: bool,
-    #[arg(short, long)]
+    #[arg(short = 'd', long)]
     delete_service: bool,
-    #[arg(short, long)]
+    #[arg(short = 'x', long)]
     start_service: bool,
-    #[arg(short, long)]
+    #[arg(short = 's', long)]
     stop_service: bool,
-    #[arg(short = 'S', long, default_value_t = Ipv4Addr::from_str("127.0.0.1").unwrap())]
+    #[arg(short = 'a', long, default_value_t = Ipv4Addr::from_str("127.0.0.1").unwrap())]
     syslog_ip: Ipv4Addr,
-    #[arg(short = 's', long, default_value_t = String::from("1468"))]
+    #[arg(short = 'p', long, default_value_t = String::from("1468"))]
     syslog_port: String,
     #[arg(short, long, default_value_t = 3.0)]
     timeout: f32,   
