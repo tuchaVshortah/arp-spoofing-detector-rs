@@ -144,6 +144,64 @@ impl Display for SyslogLevels {
     }
 }
 
+/*
+struct ArpSpoofingLogger {
+    //log levels
+    min_level: SyslogLevels,
+    max_level: SyslogLevels,
+
+    //remote machine
+    syslog_ip: String,
+    syslog_port: String,
+
+    //local machine
+    local_ip: String,
+    local_port: String,
+
+    //timeout used to sleep between requests
+    timeout: f32,
+
+}
+
+trait Logger {
+    fn new(options: LoggerOptions) -> ArpSpoofingLogger;
+
+    fn emerg(bytes: [&u8]);
+    fn alert(bytes: [&u8]);
+    fn crit(bytes: [&u8]);
+    fn error(bytes: [&u8]);
+    fn warn(bytes: [&u8]);
+    fn notice(bytes: [&u8]);
+    fn info(bytes: [&u8]);
+    fn debug(bytes: [&u8]);
+
+}
+
+impl Logger for ArpSpoofingLogger {
+    fn new(options: LoggerOptions) -> ArpSpoofingLogger{
+
+        ArpSpoofingLogger {
+
+            min_level: options.min_level,
+            max_level: options.max_level,
+            syslog_ip: options.syslog_ip,
+            syslog_port: options.syslog_port,
+            local_ip: options.local_ip,
+            local_port: options.local_port,
+            timeout: options.timeout,
+
+        }
+
+    }
+
+    fn emerg(bytes: [&u8]) {
+        
+    }
+}
+
+*/
+
+
 //structure that handles CLI arguments/flags
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -187,11 +245,22 @@ fn check_service_installed() -> bool {
 
 
 struct LoggerOptions {
+    //log levels
+    min_level: SyslogLevels,
+    max_level: SyslogLevels,
+
+    //remote machine
     syslog_ip: String,
     syslog_port: String,
+
+    //protocol used to establish a connection
     proto: Proto,
+
+    //local machine
     local_ip: String,
     local_port: String,
+
+    //timeout used to sleep between requests
     timeout: f32,
 }
 
