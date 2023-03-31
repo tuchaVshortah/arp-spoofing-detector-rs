@@ -114,7 +114,35 @@ impl Display for Proto {
     }
 }
 
+enum SyslogLevels {
+    Emergency,
+    Alert,
+    Critical,
+    Error,
+    Warning,
+    Notice,
+    Informational,
+    Debug 
+}
 
+impl Display for SyslogLevels {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+
+        match self {
+
+            SyslogLevels::Emergency => write!(f, "Emergency"),
+            SyslogLevels::Alert => write!(f, "Alert"),
+            SyslogLevels::Critical => write!(f, "Critical"),
+            SyslogLevels::Error => write!(f, "Error"),
+            SyslogLevels::Warning => write!(f, "Warning"),
+            SyslogLevels::Notice => write!(f, "Notice"),
+            SyslogLevels::Informational => write!(f, "Informational"),
+            SyslogLevels::Debug => write!(f, "Debug"),
+
+        }
+
+    }
+}
 
 //structure that handles CLI arguments/flags
 #[derive(Parser)]
