@@ -6,36 +6,15 @@ use std::str::{self, FromStr};
 use std::fmt::Display;
 use clap::Parser;
 use serde_json::{json, error};
-use syslog::{BasicLogger, Facility, Formatter5424};
-use log::{SetLoggerError, LevelFilter, info};
 
 #[allow(unused, unused_variables, dead_code)]
 
 //arp spoofing detector
 fn detector(options: LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
     
-    let formatter = Formatter5424::default();
-    let mut logger;
-    
     if options.proto == Proto::Udp {
-        //local_ip has to be set to some value
-        //cli option is required to be added
-
-        logger = match syslog::udp(formatter, format!("{}:{}", options.local_ip, options.local_port), format!("{}:{}", options.syslog_ip, options.syslog_port)) {
-
-            Err(e) => { println!("impossible to connect to syslog: {:?}", e); return Err(Box::new(e)); },
-            Ok(logger) => logger,
-
-        };
 
     } else {
-
-        logger = match syslog::tcp(formatter, format!("{}:{}", options.syslog_ip, options.syslog_port)) {
-
-            Err(e) => { println!("impossible to connect to syslog: {:?}", e); return Err(Box::new(e)); },
-            Ok(logger) => logger,
-
-        };
 
     }
 
@@ -71,8 +50,9 @@ fn detector(options: LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
                     message.insert("Second MAC", &mac);
 
                     let json_message = json!(message).to_string();
+                    let bytes = json_message.as_bytes();
 
-                    logger.warning(((1, HashMap::new(), json_message)));
+                    logger.warning(json_message);
 
                     is_spoofed = true;
                 }
@@ -87,8 +67,9 @@ fn detector(options: LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
             message.insert("description", "ARP spoofing not detected");
 
             let json_message = json!(message).to_string();
+            let bytes = json_message.as_bytes();
 
-            logger.warning(((1, HashMap::new(), json_message)));
+            logger.warning(json_message);
             
         }
 
