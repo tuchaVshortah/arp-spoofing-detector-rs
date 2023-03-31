@@ -190,7 +190,7 @@ struct Cli {
     start_service: bool,
     #[arg(short = 's', long)]
     stop_service: bool,
-    #[clap(short, long, default_value="udp")]
+    #[clap(short, long, default_value="tcp")]
     proto: Proto,
     #[arg(short = 'a', long, default_value_t = Ipv4Addr::from_str("127.0.0.1").unwrap())]
     syslog_ip: Ipv4Addr,
