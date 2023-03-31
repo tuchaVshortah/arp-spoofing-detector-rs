@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::error::Error;
-use std::net::Ipv4Addr;
+use std::io::Write;
+use std::net::{Ipv4Addr, TcpStream};
 use std::process::Command;
 use std::str::{self, FromStr};
 use std::fmt::Display;
@@ -8,6 +9,88 @@ use clap::Parser;
 use serde_json::{json, error};
 
 #[allow(unused, unused_variables, dead_code)]
+
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+enum Proto {
+    Udp,
+    Tcp,
+}
+
+impl Default for Proto {
+    fn default() -> Self {
+        Proto::Udp
+    }
+}
+
+impl FromStr for Proto {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "udp" => Ok(Proto::Udp),
+            "tcp" => Ok(Proto::Tcp),
+            _ => Err(format!("Invalid protocol type: {}", s)),
+        }
+    }
+}
+
+impl Display for Proto {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        
+        match self {
+
+            Proto::Udp => write!(f, "Udp"),
+            Proto::Tcp => write!(f, "Tcp"),
+
+        }
+
+    }
+}
+
+
+struct LoggerOptions {
+    //log levels
+    //min_level: SyslogLevels,
+    //max_level: SyslogLevels,
+
+    //remote machine
+    syslog_ip: String,
+    syslog_port: String,
+
+    //protocol used to establish a connection
+    proto: Proto,
+
+    //local machine
+    local_ip: String,
+    local_port: String,
+
+    //timeout used to sleep between requests
+    timeout: f32,
+}
+
+
+fn warning(options: &LoggerOptions, message: String) {
+    match options.proto {
+        Proto::Udp => {
+            //do something
+        },
+        
+        Proto::Tcp => {
+            match TcpStream::connect(format!("{}:{}", options.syslog_ip, options.syslog_port)) {
+                Ok(mut stream) => {
+
+                    println!("Successfully connected to the server");
+                    stream.write_all(message.as_bytes()).unwrap();
+                },
+                Err(error) => {
+
+                    println!("An error happened when sending data to the server: {}", error);
+                }
+            }
+
+        }
+    }
+}
 
 //arp spoofing detector
 fn detector(options: LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
@@ -52,7 +135,7 @@ fn detector(options: LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
                     let json_message = json!(message).to_string();
                     let bytes = json_message.as_bytes();
 
-                    logger.warning(json_message);
+                    warning(&options, json_message);
 
                     is_spoofed = true;
                 }
@@ -69,7 +152,7 @@ fn detector(options: LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
             let json_message = json!(message).to_string();
             let bytes = json_message.as_bytes();
 
-            logger.warning(json_message);
+            warning(&options, json_message);
             
         }
 
@@ -78,41 +161,7 @@ fn detector(options: LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-enum Proto {
-    Udp,
-    Tcp,
-}
 
-impl Default for Proto {
-    fn default() -> Self {
-        Proto::Udp
-    }
-}
-
-impl FromStr for Proto {
-    type Err = String;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "udp" => Ok(Proto::Udp),
-            "tcp" => Ok(Proto::Tcp),
-            _ => Err(format!("Invalid protocol type: {}", s)),
-        }
-    }
-}
-
-impl Display for Proto {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        
-        match self {
-
-            Proto::Udp => write!(f, "Udp"),
-            Proto::Tcp => write!(f, "Tcp"),
-
-        }
-
-    }
-}
 
 enum SyslogLevels {
     Emergency,
@@ -244,25 +293,7 @@ fn check_service_installed() -> bool {
 }
 
 
-struct LoggerOptions {
-    //log levels
-    min_level: SyslogLevels,
-    max_level: SyslogLevels,
 
-    //remote machine
-    syslog_ip: String,
-    syslog_port: String,
-
-    //protocol used to establish a connection
-    proto: Proto,
-
-    //local machine
-    local_ip: String,
-    local_port: String,
-
-    //timeout used to sleep between requests
-    timeout: f32,
-}
 
 
 //the main function
