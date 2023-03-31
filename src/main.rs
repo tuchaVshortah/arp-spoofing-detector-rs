@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::error::Error;
 use std::io::Write;
-use std::net::{Ipv4Addr, TcpStream};
+use std::net::{Ipv4Addr, UdpSocket, TcpStream};
 use std::process::Command;
 use std::str::{self, FromStr};
 use std::fmt::Display;
@@ -72,7 +72,21 @@ struct LoggerOptions {
 fn warning(options: &LoggerOptions, message: String) {
     match options.proto {
         Proto::Udp => {
-            //do something
+            let socket = match UdpSocket::bind(format!("{}:{}", options.local_ip, options.local_port)) {
+                Ok(socket) => socket,
+                Err(error) => { println!("Could not create a UDP socket: {}", error); return; },
+            };
+
+            match socket.connect(format!("{}:{}", options.syslog_ip, options.syslog_port)) {
+                Ok(())  =>{
+
+                    println!("Successfully connected to the server");
+                    socket.send(message.as_bytes());
+                },
+                Err(error) => {
+                    println!("An error happened when sending data to the server: {}", error);
+                }
+            }
         },
         
         Proto::Tcp => {
