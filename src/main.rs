@@ -190,7 +190,7 @@ fn detector(options: LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
 
 //structure that handles CLI arguments/flags
 #[derive(Parser)]
-#[command(author = "tuchaVshortah", version, about = "ARP spoofing detector program", long_about = None)]
+#[command(author = "tuchaVshortah", version = "1.0.1", about = "ARP spoofing detector program", long_about = None)]
 struct Cli {
 
     #[arg(short = 'i', long, help="Installs a service that allows the program to run as a background process")]
