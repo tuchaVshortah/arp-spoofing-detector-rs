@@ -84,7 +84,7 @@ fn warning(options: &LoggerOptions, message: String) {
 
                     if let Err(error) = socket.send(message.as_bytes()) {
 
-                        println!("Couldn't send a log through UDP socket: {}", error)
+                        println!("Couldn't send a log through UDP socket: {}", error);
 
                     }
                 },
@@ -104,7 +104,7 @@ fn warning(options: &LoggerOptions, message: String) {
 
                     if let Err(error) = stream.write_all(message.as_bytes()) {
 
-                        println!("Couldn't send a log through TCP stream: {}", error)
+                        println!("Couldn't send a log through TCP stream: {}", error);
 
                     }
                 },
@@ -267,11 +267,11 @@ fn main() -> Result<(), Box<dyn Error>>{
 
         if check_service_installed() {
 
-            println!("The \"ArpSpoofDetectService\" service is installed")
+            println!("The \"ArpSpoofDetectService\" service is installed");
 
         } else {
 
-            println!("The \"ArpSpoofDetectService\" service is not installed")
+            println!("The \"ArpSpoofDetectService\" service is not installed");
 
         }
 
