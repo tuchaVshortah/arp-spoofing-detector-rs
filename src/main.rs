@@ -78,10 +78,12 @@ fn warning(options: &LoggerOptions, message: String) {
             };
 
             match socket.connect(format!("{}:{}", options.syslog_ip, options.syslog_port)) {
-                Ok(())  =>{
+                Ok(())  => {
 
                     println!("Successfully connected to the server");
-                    socket.send(message.as_bytes());
+                    if let Err(error) = socket.send(message.as_bytes()) {
+                        println!("Couldn't send a log through UDP socket: {}", error)
+                    }
                 },
                 Err(error) => {
                     println!("An error happened when sending data to the server: {}", error);
@@ -94,7 +96,9 @@ fn warning(options: &LoggerOptions, message: String) {
                 Ok(mut stream) => {
 
                     println!("Successfully connected to the server");
-                    stream.write_all(message.as_bytes()).unwrap();
+                    if let Err(error) = stream.write_all(message.as_bytes()) {
+                        println!("Couldn't send a log through TCP stream: {}", error)
+                    }
                 },
                 Err(error) => {
 
