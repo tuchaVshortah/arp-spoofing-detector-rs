@@ -6,7 +6,7 @@ use std::process::Command;
 use std::str::{self, FromStr};
 use std::fmt::Display;
 use clap::Parser;
-use serde_json::{json, error};
+use serde_json::{json};
 
 #[allow(unused, unused_variables, dead_code)]
 
@@ -319,5 +319,5 @@ fn main() -> Result<(), Box<dyn Error>>{
     }
 
     Ok(())
-    
+
 }
