@@ -193,34 +193,34 @@ fn detector(options: LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
 #[command(author = "tuchaVshortah", version, about = "ARP spoofing detector program", long_about = None)]
 struct Cli {
 
-    #[arg(short = 'i', long)]
+    #[arg(short = 'i', long, help="Installs a service that allows the program to run as a background process")]
     install_service: bool,
 
-    #[arg(short = 'c', long)]
+    #[arg(short = 'c', long, help="Checks if service is installed")]
     check_service: bool,
 
-    #[arg(short = 'd', long)]
+    #[arg(short = 'd', long, help="Deletes the service only if it has already been installed")]
     delete_service: bool,
 
-    #[arg(short = 'x', long)]
+    #[arg(short = 'x', long, help="Starts the program in background")]
     start_service: bool,
 
-    #[arg(short = 's', long)]
+    #[arg(short = 's', long, help="Stops the background process")]
     stop_service: bool,
 
-    #[arg(short, long, default_value="tcp")]
+    #[arg(short, long, default_value="tcp", help="Specifies which protocol to use. Can be tcp or udp (case sensitive)")]
     proto: Proto,
 
-    #[arg(long, default_value_t = Ipv4Addr::from_str("127.0.0.1").unwrap())]
+    #[arg(long, default_value_t = Ipv4Addr::from_str("127.0.0.1").unwrap(), help="Takes IP address of the Syslog server")]
     syslog_ip: Ipv4Addr,
 
-    #[arg(long, default_value_t = String::from("1468"))]
+    #[arg(long, default_value_t = String::from("1468"), help="Specifies the server port to connect to")]
     syslog_port: String,
 
-    #[arg(long, default_value_t = Ipv4Addr::from_str("127.0.0.1").unwrap())]
+    #[arg(long, default_value_t = Ipv4Addr::from_str("127.0.0.1").unwrap(), help="Takes IP address of the local machine. Required when udp is used")]
     local_ip: Ipv4Addr,
 
-    #[arg(long, default_value_t = String::from("9999"))]
+    #[arg(long, default_value_t = String::from("9999"), help="Specifies the local port to use. Required when udp is used")]
     local_port: String,
 
     #[arg(long, default_value_t = 3.0)]
