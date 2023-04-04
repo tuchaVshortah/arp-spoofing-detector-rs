@@ -25,3 +25,7 @@ Compile
 ```
 
 Enjoy!
+
+```powershell
+    arp-spoofing-detector.exe -h
+```
