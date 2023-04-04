@@ -211,19 +211,19 @@ struct Cli {
     #[clap(short, long, default_value="tcp")]
     proto: Proto,
 
-    #[arg(short = 'a', long, default_value_t = Ipv4Addr::from_str("127.0.0.1").unwrap())]
+    #[arg(long, default_value_t = Ipv4Addr::from_str("127.0.0.1").unwrap())]
     syslog_ip: Ipv4Addr,
 
-    #[arg(short = 'z', long, default_value_t = String::from("1468"))]
+    #[arg(long, default_value_t = String::from("1468"))]
     syslog_port: String,
 
-    #[arg(short, long, default_value_t = Ipv4Addr::from_str("127.0.0.1").unwrap())]
+    #[arg(long, default_value_t = Ipv4Addr::from_str("127.0.0.1").unwrap())]
     local_ip: Ipv4Addr,
 
-    #[arg(short = 'b', long, default_value_t = String::from("9999"))]
+    #[arg(long, default_value_t = String::from("9999"))]
     local_port: String,
 
-    #[arg(short, long, default_value_t = 3.0)]
+    #[arg(long, default_value_t = 3.0)]
     timeout: f32,
 
 }
