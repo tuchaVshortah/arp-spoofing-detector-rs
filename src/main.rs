@@ -208,7 +208,7 @@ struct Cli {
     #[arg(short = 's', long)]
     stop_service: bool,
 
-    #[clap(short, long, default_value="tcp")]
+    #[arg(short, long, default_value="tcp")]
     proto: Proto,
 
     #[arg(long, default_value_t = Ipv4Addr::from_str("127.0.0.1").unwrap())]
