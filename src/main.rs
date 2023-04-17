@@ -7,6 +7,7 @@ use std::process::Command;
 use std::str::{self, FromStr};
 use std::fmt::Display;
 use clap::Parser;
+use async_std::{task, prelude::*};
 use serde_json::{json};
 
 #[allow(unused, unused_variables, dead_code)]
@@ -249,7 +250,8 @@ fn check_service_installed() -> bool {
 
 
 //the main function
-fn main() -> Result<(), Box<dyn Error>>{
+#[async_std::main]
+async fn main() -> Result<(), Box<dyn Error>>{
 
     let cwd = env::current_dir().unwrap().into_os_string().into_string().unwrap();
 
@@ -320,8 +322,13 @@ fn main() -> Result<(), Box<dyn Error>>{
             timeout: cli.timeout,
         };
 
-        return detector(options);
+        let child = task::spawn(
+            async {
+                detector(options).unwrap();
+            }
+        );
         
+        child.await
     }
 
     Ok(())
