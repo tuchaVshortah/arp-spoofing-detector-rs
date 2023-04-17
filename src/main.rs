@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::env;
 use std::error::Error;
 use std::io::Write;
 use std::net::{Ipv4Addr, UdpSocket, TcpStream};
@@ -250,7 +251,12 @@ fn check_service_installed() -> bool {
 //the main function
 fn main() -> Result<(), Box<dyn Error>>{
 
-    let install_service_command = "New-Service -Name \"ArpSpoofDetectService\" -DisplayName \"ARP spoofing detector service\" -Description \"A service that detects ARP spoofing in your network\" -StartupType Automatic -BinaryPathName \"arp-spoofing-detector.exe\"".split_whitespace();
+    let cwd = env::current_dir().unwrap().into_os_string().into_string().unwrap();
+
+
+    let install_service_string = format!("New-Service -Name \"ArpSpoofDetectService\" -DisplayName \"ARP spoofing detector service\" -Description \"A service that detects ARP spoofing in your network\" -StartupType Automatic -BinaryPathName \"{}\\arp-spoofing-detector.exe\"", cwd);
+    let install_service_command = install_service_string.split_whitespace();
+
     let start_service_command = "Start-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
     let stop_service_command = "Stop-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
     let delete_service_command = "sc.exe Delete \"ArpSpoofDetectService\"".split_whitespace();
