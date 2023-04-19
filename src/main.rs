@@ -233,6 +233,7 @@ struct Cli {
 
 }
 
+fn install_service(cli_options: &Cli) {}
 
 fn check_service_installed() -> bool {
 
@@ -248,7 +249,9 @@ fn check_service_installed() -> bool {
     content.contains("1")
 }
 
+fn delete_service() {}
 
+fn reinstall_service() {}
 
 
 
