@@ -233,7 +233,29 @@ struct Cli {
 
 }
 
-fn install_service(cli_options: &Cli) {}
+fn install_service(cli: &Cli) {
+    let cwd = env::current_dir().unwrap().into_os_string().into_string().unwrap();
+
+        let install_service_string;
+        
+        match cli.proto {
+            Proto::Udp => {
+                install_service_string = format!("New-Service -Name \"ArpSpoofDetectService\" -DisplayName \"ARP spoofing detector service\" -Description \"A service that detects ARP spoofing in your network\" -StartupType Automatic -BinaryPathName \"{}\\arp-spoofing-detector.exe -p udp --local-ip {} --local-port {} --syslog-ip {} --syslog-port {} --timeout {}\"", cwd, cli.local_ip, cli.local_port, cli.syslog_ip, cli.syslog_port, cli.timeout);
+            },
+
+            Proto::Tcp => {
+                install_service_string = format!("New-Service -Name \"ArpSpoofDetectService\" -DisplayName \"ARP spoofing detector service\" -Description \"A service that detects ARP spoofing in your network\" -StartupType Automatic -BinaryPathName \"{}\\arp-spoofing-detector.exe -p tcp --syslog-ip {} --syslog-port {} --timeout {}\"", cwd, cli.syslog_ip, cli.syslog_port, cli.timeout);
+            }
+        }
+        
+        let install_service_command = install_service_string.split_whitespace();
+
+
+        Command::new("powershell")
+            .args(install_service_command)
+            .output()
+            .expect("Failed to execute the install command");
+}
 
 fn check_service_installed() -> bool {
 
@@ -263,27 +285,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
 
     if cli.install_service {
 
-        let cwd = env::current_dir().unwrap().into_os_string().into_string().unwrap();
-
-        let install_service_string;
         
-        match cli.proto {
-            Proto::Udp => {
-                install_service_string = format!("New-Service -Name \"ArpSpoofDetectService\" -DisplayName \"ARP spoofing detector service\" -Description \"A service that detects ARP spoofing in your network\" -StartupType Automatic -BinaryPathName \"{}\\arp-spoofing-detector.exe -p udp --local-ip {} --local-port {} --syslog-ip {} --syslog-port {} --timeout {}\"", cwd, cli.local_ip, cli.local_port, cli.syslog_ip, cli.syslog_port, cli.timeout);
-            },
-
-            Proto::Tcp => {
-                install_service_string = format!("New-Service -Name \"ArpSpoofDetectService\" -DisplayName \"ARP spoofing detector service\" -Description \"A service that detects ARP spoofing in your network\" -StartupType Automatic -BinaryPathName \"{}\\arp-spoofing-detector.exe -p tcp --syslog-ip {} --syslog-port {} --timeout {}\"", cwd, cli.syslog_ip, cli.syslog_port, cli.timeout);
-            }
-        }
-        
-        let install_service_command = install_service_string.split_whitespace();
-
-
-        Command::new("powershell")
-            .args(install_service_command)
-            .output()
-            .expect("Failed to execute the install command");
 
     } else if cli.check_service {
 
