@@ -271,7 +271,16 @@ fn check_service_installed() -> bool {
     content.contains("1")
 }
 
-fn delete_service() {}
+fn delete_service() {
+
+    let delete_service_command = "sc.exe Delete \"ArpSpoofDetectService\"".split_whitespace();
+
+    Command::new("powershell")
+        .args(delete_service_command)
+        .output()
+        .expect("Failed to execute the delete service command");
+    
+}
 
 fn reinstall_service() {}
 
@@ -301,7 +310,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
 
     } else if cli.delete_service {
 
-        let delete_service_command = "sc.exe Delete \"ArpSpoofDetectService\"".split_whitespace();
+        
 
         if !check_service_installed() {
 
@@ -309,10 +318,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
 
         } else {
 
-            Command::new("powershell")
-            .args(delete_service_command)
-            .output()
-            .expect("Failed to execute the delete service command");
+            
 
         }
     } else if cli.reinstall_service {
