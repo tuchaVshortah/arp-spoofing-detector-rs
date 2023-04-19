@@ -282,7 +282,20 @@ fn delete_service() {
 
 }
 
-fn reinstall_service(cli: &Cli) {}
+fn reinstall_service(cli: &Cli) {
+
+    if !check_service_installed() {
+
+        panic!("Cannot reinstall service: Not Installed")
+
+    } else {
+
+        delete_service();
+
+    }
+
+    install_service(cli);
+}
 
 
 
