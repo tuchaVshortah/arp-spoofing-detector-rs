@@ -259,8 +259,18 @@ async fn main() -> Result<(), Box<dyn Error>>{
 
         let cwd = env::current_dir().unwrap().into_os_string().into_string().unwrap();
 
+        let install_service_string;
+        
+        match cli.proto {
+            Proto::Udp => {
+                install_service_string = format!("New-Service -Name \"ArpSpoofDetectService\" -DisplayName \"ARP spoofing detector service\" -Description \"A service that detects ARP spoofing in your network\" -StartupType Automatic -BinaryPathName \"{}\\arp-spoofing-detector.exe -p udp --local-ip {} --local-port {} --syslog-ip {} --syslog-port {} --timeout {}\"", cwd, cli.local_ip, cli.local_port, cli.syslog_ip, cli.syslog_port, cli.timeout);
+            },
 
-        let install_service_string = format!("New-Service -Name \"ArpSpoofDetectService\" -DisplayName \"ARP spoofing detector service\" -Description \"A service that detects ARP spoofing in your network\" -StartupType Automatic -BinaryPathName \"{}\\arp-spoofing-detector.exe\"", cwd);
+            Proto::Tcp => {
+                install_service_string = format!("New-Service -Name \"ArpSpoofDetectService\" -DisplayName \"ARP spoofing detector service\" -Description \"A service that detects ARP spoofing in your network\" -StartupType Automatic -BinaryPathName \"{}\\arp-spoofing-detector.exe -p tcp --syslog-ip {} --syslog-port {} --timeout {}\"", cwd, cli.syslog_ip, cli.syslog_port, cli.timeout);
+            }
+        }
+        
         let install_service_command = install_service_string.split_whitespace();
 
 
