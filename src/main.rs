@@ -234,6 +234,7 @@ struct Cli {
 }
 
 fn install_service(cli: &Cli) {
+
     let cwd = env::current_dir().unwrap().into_os_string().into_string().unwrap();
 
         let install_service_string;
@@ -255,6 +256,7 @@ fn install_service(cli: &Cli) {
             .args(install_service_command)
             .output()
             .expect("Failed to execute the install command");
+
 }
 
 fn check_service_installed() -> bool {
@@ -269,6 +271,7 @@ fn check_service_installed() -> bool {
     let content = str::from_utf8(&output.stdout).unwrap();
 
     content.contains("1")
+
 }
 
 fn delete_service() {
@@ -286,7 +289,7 @@ fn reinstall_service(cli: &Cli) {
 
     if !check_service_installed() {
 
-        panic!("Cannot reinstall service: Not Installed")
+        panic!("Could not reinstall the service: Not Installed")
 
     } else {
 
@@ -295,6 +298,7 @@ fn reinstall_service(cli: &Cli) {
     }
 
     install_service(cli);
+
 }
 
 
@@ -325,14 +329,16 @@ async fn main() -> Result<(), Box<dyn Error>>{
 
         if !check_service_installed() {
 
-            panic!("Cannot delete service: Not Installed")
+            panic!("Could not delete the service: Not Installed")
 
         } else {
 
             delete_service();
 
         }
+
     } else if cli.reinstall_service {
+
         reinstall_service(&cli);
 
     } else if cli.start_service {
@@ -371,6 +377,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
         );
         
         child.await
+        
     }
 
     Ok(())
