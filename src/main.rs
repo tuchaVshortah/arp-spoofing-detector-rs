@@ -204,7 +204,7 @@ struct Cli {
     #[arg(short = 'd', long, help="Deletes the service only if it has already been installed")]
     delete_service: bool,
 
-    #[arg(short = 'r', long, help="Reinstalls the service (simple wrapper for --install-service and --delete-service)")]
+    #[arg(short = 'r', long, help="Reinstalls the service only if it has already been installed (simple wrapper for --install-service and --delete-service)")]
     reinstall_service: bool,
 
     #[arg(short = 'x', long, help="Starts the program in background")]
