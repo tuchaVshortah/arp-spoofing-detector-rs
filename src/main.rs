@@ -253,19 +253,17 @@ fn check_service_installed() -> bool {
 #[async_std::main]
 async fn main() -> Result<(), Box<dyn Error>>{
 
-    let cwd = env::current_dir().unwrap().into_os_string().into_string().unwrap();
-
-
-    let install_service_string = format!("New-Service -Name \"ArpSpoofDetectService\" -DisplayName \"ARP spoofing detector service\" -Description \"A service that detects ARP spoofing in your network\" -StartupType Automatic -BinaryPathName \"{}\\arp-spoofing-detector.exe\"", cwd);
-    let install_service_command = install_service_string.split_whitespace();
-
-    let start_service_command = "Start-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
-    let stop_service_command = "Stop-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
-    let delete_service_command = "sc.exe Delete \"ArpSpoofDetectService\"".split_whitespace();
-
     let cli = Cli::parse();
 
     if cli.install_service {
+
+        let cwd = env::current_dir().unwrap().into_os_string().into_string().unwrap();
+
+
+        let install_service_string = format!("New-Service -Name \"ArpSpoofDetectService\" -DisplayName \"ARP spoofing detector service\" -Description \"A service that detects ARP spoofing in your network\" -StartupType Automatic -BinaryPathName \"{}\\arp-spoofing-detector.exe\"", cwd);
+        let install_service_command = install_service_string.split_whitespace();
+
+
         Command::new("powershell")
             .args(install_service_command)
             .output()
@@ -285,6 +283,8 @@ async fn main() -> Result<(), Box<dyn Error>>{
 
     } else if cli.delete_service {
 
+        let delete_service_command = "sc.exe Delete \"ArpSpoofDetectService\"".split_whitespace();
+
         if !check_service_installed() {
 
             panic!("Cannot delete service: Not Installed")
@@ -299,12 +299,16 @@ async fn main() -> Result<(), Box<dyn Error>>{
         }
     } else if cli.start_service {
 
+        let start_service_command = "Start-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
+
         Command::new("powershell")
             .args(start_service_command)
             .output()
             .expect("Failed to execute the start service command");
 
     } else if cli.stop_service {
+
+        let stop_service_command = "Stop-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
 
         Command::new("powershell")
             .args(stop_service_command)
