@@ -279,7 +279,7 @@ fn delete_service() {
         .args(delete_service_command)
         .output()
         .expect("Failed to execute the delete service command");
-    
+
 }
 
 fn reinstall_service() {}
@@ -294,7 +294,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
 
     if cli.install_service {
 
-        
+        install_service(&cli);
 
     } else if cli.check_service {
 
@@ -310,19 +310,17 @@ async fn main() -> Result<(), Box<dyn Error>>{
 
     } else if cli.delete_service {
 
-        
-
         if !check_service_installed() {
 
             panic!("Cannot delete service: Not Installed")
 
         } else {
 
-            
+            delete_service();
 
         }
     } else if cli.reinstall_service {
-        //start the reinstall process
+        reinstall_service();
 
     } else if cli.start_service {
 
