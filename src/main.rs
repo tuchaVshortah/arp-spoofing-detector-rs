@@ -310,6 +310,9 @@ async fn main() -> Result<(), Box<dyn Error>>{
             .expect("Failed to execute the delete service command");
 
         }
+    } else if cli.reinstall_service {
+        //start the reinstall process
+
     } else if cli.start_service {
 
         let start_service_command = "Start-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
