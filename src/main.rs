@@ -282,7 +282,7 @@ fn delete_service() {
 
 }
 
-fn reinstall_service() {}
+fn reinstall_service(cli: &Cli) {}
 
 
 
@@ -320,7 +320,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
 
         }
     } else if cli.reinstall_service {
-        reinstall_service();
+        reinstall_service(&cli);
 
     } else if cli.start_service {
 
