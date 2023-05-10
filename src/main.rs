@@ -7,7 +7,6 @@ use std::process::Command;
 use std::str::{self, FromStr};
 use std::fmt::Display;
 use clap::Parser;
-use async_std::task;
 use serde_json::json;
 
 #[macro_use]
@@ -319,8 +318,7 @@ fn reinstall_service(cli: &Cli) {
 
 
 //the main function
-#[async_std::main]
-async fn main() -> Result<(), Box<dyn Error>>{
+fn main() -> Result<(), Box<dyn Error>>{
 
     let cli = Cli::parse();
 
@@ -385,25 +383,19 @@ async fn main() -> Result<(), Box<dyn Error>>{
             timeout: cli.timeout,
         };
 
-        let child = task::spawn(
-            async {
-                /*
-                let mut status = unsafe { mem::zeroed::<Services::SERVICE_STATUS>() };
-                status.dwServiceType = Services::SERVICE_WIN32_OWN_PROCESS;
-                status.dwCurrentState = Services::SERVICE_RUNNING;
-                status.dwControlsAccepted = Services::SERVICE_ACCEPT_STOP;
-                status.dwWin32ExitCode = 0;
-                status.dwServiceSpecificExitCode = 0;
-                status.dwCheckPoint = 0;
-                status.dwWaitHint = 3000;
-                */
-                
-                //Services::SetServiceStatus(Services::SERVICE_STATUS_HANDLE, status);
-                detector(options).unwrap();
-            }
-        );
+        /*
+        let mut status = unsafe { mem::zeroed::<Services::SERVICE_STATUS>() };
+        status.dwServiceType = Services::SERVICE_WIN32_OWN_PROCESS;
+        status.dwCurrentState = Services::SERVICE_RUNNING;
+        status.dwControlsAccepted = Services::SERVICE_ACCEPT_STOP;
+        status.dwWin32ExitCode = 0;
+        status.dwServiceSpecificExitCode = 0;
+        status.dwCheckPoint = 0;
+        status.dwWaitHint = 3000;
+        */
         
-        child.await
+        //Services::SetServiceStatus(Services::SERVICE_STATUS_HANDLE, status);
+        detector(options).unwrap();
         
     }
 
