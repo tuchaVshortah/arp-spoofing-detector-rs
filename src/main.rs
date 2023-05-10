@@ -139,7 +139,7 @@ fn warning(options: &LoggerOptions, message: String) {
 }
 
 //arp spoofing detector
-fn detector(options: LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
+fn detector(options: &LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
     
     let mut arp_cache: HashMap<Ipv4Addr, String> = HashMap::new();
 
@@ -200,9 +200,10 @@ fn detector(options: LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
     }
 
     std::thread::sleep(std::time::Duration::from_secs_f32(options.timeout));
+    Ok(())
 }
 
-fn run_detector_service(options: LoggerOptions) {
+fn run_detector_service(options: LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
 
      // Create a channel to be able to poll a stop event from the service worker loop.
      let (shutdown_tx, shutdown_rx) = mpsc::channel();
@@ -237,10 +238,10 @@ fn run_detector_service(options: LoggerOptions) {
          checkpoint: 0,
          wait_hint: Duration::default(),
          process_id: None,
-     })?;
+     });
 
      loop {
-         detector(options);
+         detector(&options);
          // Poll shutdown event.
          match shutdown_rx.recv_timeout(Duration::from_secs(1)) {
              // Break the loop either upon stop or channel disconnect
@@ -260,7 +261,7 @@ fn run_detector_service(options: LoggerOptions) {
          checkpoint: 0,
          wait_hint: Duration::default(),
          process_id: None,
-     })?;
+     });
 
      Ok(())
 }
@@ -477,7 +478,7 @@ fn main() -> Result<(), windows_service::Error>{
         */
         
         //Services::SetServiceStatus(Services::SERVICE_STATUS_HANDLE, status);
-        detector(options).unwrap();
+        detector(&options).unwrap();
         
     }
 
