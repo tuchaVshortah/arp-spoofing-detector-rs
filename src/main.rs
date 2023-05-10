@@ -24,7 +24,7 @@ use windows_service::service_control_handler::{self, ServiceControlHandlerResult
 //fix detector_service name
 //reason -> function does not exist yet
 //fix: create a function 
-define_windows_service!(ffi_service_main, detector_service);
+define_windows_service!(ffi_service_main, detector_service_main);
 
 #[allow(unused, unused_imports, unused_variables, dead_code)]
 
