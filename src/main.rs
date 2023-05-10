@@ -204,6 +204,88 @@ fn detector(options: LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
     }
 }
 
+fn run_detector_service(options: LoggerOptions) {
+
+     // Create a channel to be able to poll a stop event from the service worker loop.
+     let (shutdown_tx, shutdown_rx) = mpsc::channel();
+
+     // Define system service event handler that will be receiving service events.
+     let event_handler = move |control_event| -> ServiceControlHandlerResult {
+         match control_event {
+             // Notifies a service to report its current status information to the service
+             // control manager. Always return NoError even if not implemented.
+             ServiceControl::Interrogate => ServiceControlHandlerResult::NoError,
+
+             // Handle stop
+             ServiceControl::Stop => {
+                 shutdown_tx.send(()).unwrap();
+                 ServiceControlHandlerResult::NoError
+             }
+
+             _ => ServiceControlHandlerResult::NotImplemented,
+         }
+     };
+
+     // Register system service event handler.
+     // The returned status handle should be used to report service status changes to the system.
+     let status_handle = service_control_handler::register("ArpSpoofDetectService", event_handler)?;
+
+     // Tell the system that service is running
+     status_handle.set_service_status(ServiceStatus {
+         service_type: ServiceType::OWN_PROCESS,
+         current_state: ServiceState::Running,
+         controls_accepted: ServiceControlAccept::STOP,
+         exit_code: ServiceExitCode::Win32(0),
+         checkpoint: 0,
+         wait_hint: Duration::default(),
+         process_id: None,
+     })?;
+
+     loop {
+         detector(options);
+         // Poll shutdown event.
+         match shutdown_rx.recv_timeout(Duration::from_secs(1)) {
+             // Break the loop either upon stop or channel disconnect
+             Ok(_) | Err(mpsc::RecvTimeoutError::Disconnected) => break,
+
+             // Continue work if no events were received within the timeout
+             Err(mpsc::RecvTimeoutError::Timeout) => (),
+         };
+     }
+
+     // Tell the system that service has stopped.
+     status_handle.set_service_status(ServiceStatus {
+         service_type: ServiceType::OWN_PROCESS,
+         current_state: ServiceState::Stopped,
+         controls_accepted: ServiceControlAccept::empty(),
+         exit_code: ServiceExitCode::Win32(0),
+         checkpoint: 0,
+         wait_hint: Duration::default(),
+         process_id: None,
+     })?;
+
+     Ok(())
+}
+
+fn detector_service_main(arguments: Vec<OsString>) {
+
+    let cli = Cli::parse();
+
+    let options = LoggerOptions {
+        syslog_ip: cli.syslog_ip.to_string(),
+        syslog_port: cli.syslog_port,
+        proto: cli.proto,
+        local_ip: cli.local_ip.to_string(),
+        local_port: cli.local_port,
+        timeout: cli.timeout,
+    };
+
+    if let Err(error) = run_detector_service(options) {
+        println!("Something bad happened when statring the service")
+    }
+
+}
+
 //structure that handles CLI arguments/flags
 #[derive(Parser)]
 #[command(author = "tuchaVshortah", version = "1.0.1", about = "ARP spoofing detector program", long_about = None)]
