@@ -397,7 +397,7 @@ fn reinstall_service(cli: &Cli) {
 
 
 //the main function
-fn main() -> Result<(), windows_service::Error>>{
+fn main() -> Result<(), windows_service::Error>{
 
     let cli = Cli::parse();
 
