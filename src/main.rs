@@ -356,12 +356,14 @@ fn main() -> Result<(), Box<dyn Error>>{
 
     } else if cli.start_service {
 
-        let start_service_command = "Start-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
+        //let start_service_command = "Start-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
 
-        Command::new("powershell")
-            .args(start_service_command)
-            .output()
-            .expect("Failed to execute the start service command");
+        //Command::new("powershell")
+        //    .args(start_service_command)
+        //    .output()
+        //    .expect("Failed to execute the start service command");
+
+        service_dispatcher::start("ArpSpoofDetectService", ffi_service_main)?;
 
     } else if cli.stop_service {
 
