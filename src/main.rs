@@ -238,10 +238,10 @@ fn run_detector_service(options: LoggerOptions) -> Result<(), Box<dyn std::error
          checkpoint: 0,
          wait_hint: Duration::default(),
          process_id: None,
-     });
+     })?;
 
      loop {
-         detector(&options);
+         detector(&options)?;
          // Poll shutdown event.
          match shutdown_rx.recv_timeout(Duration::from_secs(1)) {
              // Break the loop either upon stop or channel disconnect
@@ -261,7 +261,7 @@ fn run_detector_service(options: LoggerOptions) -> Result<(), Box<dyn std::error
          checkpoint: 0,
          wait_hint: Duration::default(),
          process_id: None,
-     });
+     })?;
 
      Ok(())
 }
