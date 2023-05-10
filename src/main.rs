@@ -10,7 +10,24 @@ use clap::Parser;
 use async_std::task;
 use serde_json::json;
 
-#[allow(unused, unused_variables, dead_code)]
+#[macro_use]
+extern crate windows_service;
+
+use std::ffi::OsString;
+use windows_service::service_dispatcher;
+use std::time::Duration;
+use windows_service::service::{
+    ServiceControl, ServiceControlAccept, ServiceExitCode, ServiceState, ServiceStatus,
+    ServiceType,
+};
+use windows_service::service_control_handler::{self, ServiceControlHandlerResult};
+
+//fix detector_service name
+//reason -> function does not exist yet
+//fix: create a function 
+define_windows_service!(ffi_service_main, detector_service);
+
+#[allow(unused, unused_imports, unused_variables, dead_code)]
 
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -187,8 +204,6 @@ fn detector(options: LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
         std::thread::sleep(std::time::Duration::from_secs_f32(options.timeout));
     }
 }
-
-
 
 //structure that handles CLI arguments/flags
 #[derive(Parser)]
@@ -372,6 +387,18 @@ async fn main() -> Result<(), Box<dyn Error>>{
 
         let child = task::spawn(
             async {
+                /*
+                let mut status = unsafe { mem::zeroed::<Services::SERVICE_STATUS>() };
+                status.dwServiceType = Services::SERVICE_WIN32_OWN_PROCESS;
+                status.dwCurrentState = Services::SERVICE_RUNNING;
+                status.dwControlsAccepted = Services::SERVICE_ACCEPT_STOP;
+                status.dwWin32ExitCode = 0;
+                status.dwServiceSpecificExitCode = 0;
+                status.dwCheckPoint = 0;
+                status.dwWaitHint = 3000;
+                */
+                
+                //Services::SetServiceStatus(Services::SERVICE_STATUS_HANDLE, status);
                 detector(options).unwrap();
             }
         );
