@@ -23,7 +23,7 @@ use windows_service::service::{
 use windows_service::service_control_handler::{self, ServiceControlHandlerResult};
 
 
-define_windows_service!(ffi_service_main, detector_service_main);
+define_windows_service!(ffi_detector_service_main, detector_service_main);
 
 #[allow(unused, unused_imports, unused_variables, dead_code)]
 
