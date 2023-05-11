@@ -6,26 +6,11 @@ use std::net::{Ipv4Addr, UdpSocket, TcpStream};
 use std::process::Command;
 use std::str::{self, FromStr};
 use std::fmt::Display;
-use std::sync::mpsc;
 use clap::Parser;
+use async_std::task;
 use serde_json::json;
 
-#[macro_use]
-extern crate windows_service;
-
-use std::ffi::OsString;
-use windows_service::service_dispatcher;
-use std::time::Duration;
-use windows_service::service::{
-    ServiceControl, ServiceControlAccept, ServiceExitCode, ServiceState, ServiceStatus,
-    ServiceType,
-};
-use windows_service::service_control_handler::{self, ServiceControlHandlerResult};
-
-
-define_windows_service!(ffi_detector_service_main, detector_service_main);
-
-#[allow(unused, unused_imports, unused_variables, dead_code)]
+#[allow(unused, unused_variables, dead_code)]
 
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -137,151 +122,73 @@ fn warning(options: &LoggerOptions, message: String) {
 }
 
 //arp spoofing detector
-fn detector(options: &LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
+fn detector(options: LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
     
     let mut arp_cache: HashMap<Ipv4Addr, String> = HashMap::new();
 
-    let output = Command::new("arp")
-        .arg("-a")
-        .output()
-        .expect("Failed to execute command");
+    loop {
 
-    let arp_table = str::from_utf8(&output.stdout).unwrap();
-    let mut is_spoofed = false;
+        let output = Command::new("arp")
+            .arg("-a")
+            .output()
+            .expect("Failed to execute command");
 
-    for line in arp_table.lines() {
+        let arp_table = str::from_utf8(&output.stdout).unwrap();
+        let mut is_spoofed = false;
 
-        let parts: Vec<&str> = line.split_whitespace().collect();
+        for line in arp_table.lines() {
 
-        if parts.len() == 3 {
+            let parts: Vec<&str> = line.split_whitespace().collect();
 
-            let ip = parts[0].parse::<Ipv4Addr>().unwrap();
-            let mac = parts[1].to_string();
+            if parts.len() == 3 {
 
-            if arp_cache.contains_key(&ip) && arp_cache.get(&ip).unwrap() != &mac {
+                let ip = parts[0].parse::<Ipv4Addr>().unwrap();
+                let mac = parts[1].to_string();
 
-                println!("ARP spoofing detected for IP address {}", ip);
+                if arp_cache.contains_key(&ip) && arp_cache.get(&ip).unwrap() != &mac {
 
-                let mut message = HashMap::new();
-                message.insert("description", "ARP spoofing detected");
+                    println!("ARP spoofing detected for IP address {}", ip);
 
-                let ip_string = ip.to_string();
-                message.insert("ip", &ip_string);
+                    let mut message = HashMap::new();
+                    message.insert("description", "ARP spoofing detected");
 
-                message.insert("First MAC", arp_cache.get(&ip).unwrap());
-                message.insert("Second MAC", &mac);
+                    let ip_string = ip.to_string();
+                    message.insert("ip", &ip_string);
 
-                let json_message = json!(message).to_string();
+                    message.insert("First MAC", arp_cache.get(&ip).unwrap());
+                    message.insert("Second MAC", &mac);
 
-                warning(&options, json_message);
+                    let json_message = json!(message).to_string();
 
-                is_spoofed = true;
+                    warning(&options, json_message);
+
+                    is_spoofed = true;
+
+                }
+
+                arp_cache.insert(ip, mac);
 
             }
-
-            arp_cache.insert(ip, mac);
-
         }
+
+        if !is_spoofed {
+
+            println!("No ARP spoofing detected");
+            
+            let mut message = HashMap::new();
+            message.insert("description", "ARP spoofing not detected");
+
+            let json_message = json!(message).to_string();
+
+            warning(&options, json_message);
+            
+        }
+
+        std::thread::sleep(std::time::Duration::from_secs_f32(options.timeout));
     }
-
-    if !is_spoofed {
-
-        println!("No ARP spoofing detected");
-        
-        let mut message = HashMap::new();
-        message.insert("description", "ARP spoofing not detected");
-
-        let json_message = json!(message).to_string();
-
-        warning(&options, json_message);
-        
-    }
-
-    std::thread::sleep(std::time::Duration::from_secs_f32(options.timeout));
-    Ok(())
 }
 
-fn run_detector_service(options: LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
 
-     // Create a channel to be able to poll a stop event from the service worker loop.
-     let (shutdown_tx, shutdown_rx) = mpsc::channel();
-
-     // Define system service event handler that will be receiving service events.
-     let event_handler = move |control_event| -> ServiceControlHandlerResult {
-         match control_event {
-             // Notifies a service to report its current status information to the service
-             // control manager. Always return NoError even if not implemented.
-             ServiceControl::Interrogate => ServiceControlHandlerResult::NoError,
-
-             // Handle stop
-             ServiceControl::Stop => {
-                 shutdown_tx.send(()).unwrap();
-                 ServiceControlHandlerResult::NoError
-             }
-
-             _ => ServiceControlHandlerResult::NotImplemented,
-         }
-     };
-
-     // Register system service event handler.
-     // The returned status handle should be used to report service status changes to the system.
-     let status_handle = service_control_handler::register("ArpSpoofDetectService", event_handler)?;
-
-     // Tell the system that service is running
-     status_handle.set_service_status(ServiceStatus {
-         service_type: ServiceType::OWN_PROCESS,
-         current_state: ServiceState::Running,
-         controls_accepted: ServiceControlAccept::STOP,
-         exit_code: ServiceExitCode::Win32(0),
-         checkpoint: 0,
-         wait_hint: Duration::default(),
-         process_id: None,
-     })?;
-
-     loop {
-         detector(&options)?;
-         // Poll shutdown event.
-         match shutdown_rx.recv_timeout(Duration::from_secs(1)) {
-             // Break the loop either upon stop or channel disconnect
-             Ok(_) | Err(mpsc::RecvTimeoutError::Disconnected) => break,
-
-             // Continue work if no events were received within the timeout
-             Err(mpsc::RecvTimeoutError::Timeout) => (),
-         };
-     }
-
-     // Tell the system that service has stopped.
-     status_handle.set_service_status(ServiceStatus {
-         service_type: ServiceType::OWN_PROCESS,
-         current_state: ServiceState::Stopped,
-         controls_accepted: ServiceControlAccept::empty(),
-         exit_code: ServiceExitCode::Win32(0),
-         checkpoint: 0,
-         wait_hint: Duration::default(),
-         process_id: None,
-     })?;
-
-     Ok(())
-}
-
-fn detector_service_main(arguments: Vec<OsString>) {
-
-    let cli = Cli::parse();
-
-    let options = LoggerOptions {
-        syslog_ip: cli.syslog_ip.to_string(),
-        syslog_port: cli.syslog_port,
-        proto: cli.proto,
-        local_ip: cli.local_ip.to_string(),
-        local_port: cli.local_port,
-        timeout: cli.timeout,
-    };
-
-    if let Err(error) = run_detector_service(options) {
-        println!("Something bad happened when statring the service")
-    }
-
-}
 
 //structure that handles CLI arguments/flags
 #[derive(Parser)]
@@ -397,7 +304,8 @@ fn reinstall_service(cli: &Cli) {
 
 
 //the main function
-fn main() -> Result<(), windows_service::Error>{
+#[async_std::main]
+async fn main() -> Result<(), Box<dyn Error>>{
 
     let cli = Cli::parse();
 
@@ -435,14 +343,12 @@ fn main() -> Result<(), windows_service::Error>{
 
     } else if cli.start_service {
 
-        //let start_service_command = "Start-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
+        let start_service_command = "Start-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
 
-        //Command::new("powershell")
-        //    .args(start_service_command)
-        //    .output()
-        //    .expect("Failed to execute the start service command");
-
-        service_dispatcher::start("ArpSpoofDetectService", ffi_service_main)?;
+        Command::new("powershell")
+            .args(start_service_command)
+            .output()
+            .expect("Failed to execute the start service command");
 
     } else if cli.stop_service {
 
@@ -464,19 +370,13 @@ fn main() -> Result<(), windows_service::Error>{
             timeout: cli.timeout,
         };
 
-        /*
-        let mut status = unsafe { mem::zeroed::<Services::SERVICE_STATUS>() };
-        status.dwServiceType = Services::SERVICE_WIN32_OWN_PROCESS;
-        status.dwCurrentState = Services::SERVICE_RUNNING;
-        status.dwControlsAccepted = Services::SERVICE_ACCEPT_STOP;
-        status.dwWin32ExitCode = 0;
-        status.dwServiceSpecificExitCode = 0;
-        status.dwCheckPoint = 0;
-        status.dwWaitHint = 3000;
-        */
+        let child = task::spawn(
+            async {
+                detector(options).unwrap();
+            }
+        );
         
-        //Services::SetServiceStatus(Services::SERVICE_STATUS_HANDLE, status);
-        detector(&options).unwrap();
+        child.await
         
     }
 
