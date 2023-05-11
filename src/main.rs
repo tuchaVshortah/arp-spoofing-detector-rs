@@ -8,7 +8,12 @@ use std::str::{self, FromStr};
 use std::fmt::Display;
 use std::sync::mpsc;
 use clap::Parser;
+<<<<<<< HEAD
 use serde_json::json;
+=======
+use async_std::task;
+use serde_json::{json};
+>>>>>>> parent of 68b7b85 (Remove redundant curly brackets in a single import)
 
 #[macro_use]
 extern crate windows_service;
