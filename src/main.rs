@@ -182,8 +182,6 @@ fn detector(options: &LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
             warning(&options, json_message);
             
         }
-
-        std::thread::sleep(std::time::Duration::from_secs_f32(options.timeout));
     }
     Ok(())
 }
@@ -211,9 +209,6 @@ struct Cli {
     #[arg(long, default_value_t = String::from("9999"), help="Specifies the local port to use. Required when udp is used")]
     local_port: String,
 
-    #[arg(long, default_value_t = 3.0)]
-    timeout: f32,
-
 }
 
 //the main function
@@ -228,7 +223,6 @@ fn main() {
         proto: cli.proto,
         local_ip: cli.local_ip.to_string(),
         local_port: cli.local_port,
-        timeout: cli.timeout,
     };
 
     detector(&options).unwrap();
