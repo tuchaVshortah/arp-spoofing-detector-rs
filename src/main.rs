@@ -193,6 +193,9 @@ fn detector(options: &LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
 #[command(author = "tuchaVshortah", version = "1.0.1", about = "ARP spoofing detector program", long_about = None)]
 struct Cli {
 
+    #[arg(short, long, default_value_t = String::from("1/10 * * * * *"), help="Specifiy how often the job should be run using the Cron syntax")]
+    job_schedule: String,
+
     #[arg(short, long, default_value="tcp", help="Specifies which protocol to use. Can be tcp or udp (case sensitive)")]
     proto: Proto,
 
