@@ -64,9 +64,7 @@ struct LoggerOptions {
     //local machine
     local_ip: String,
     local_port: String,
-
-    //timeout used to sleep between requests
-    timeout: f32,
+    
 }
 
 
