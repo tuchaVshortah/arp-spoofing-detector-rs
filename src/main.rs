@@ -183,7 +183,7 @@ fn detector(options: &LoggerOptions) {
 
 //structure that handles CLI arguments/flags
 #[derive(Parser)]
-#[command(author = "tuchaVshortah", version = "1.0.1", about = "ARP spoofing detector program", long_about = None)]
+#[command(author = "tuchaVshortah", version = "1.2.0", about = "ARP spoofing detector program", long_about = None)]
 struct Cli {
 
     #[arg(short, long, default_value_t = String::from("1/10 * * * * *"), help="Specifiy how often the job should be run using the Cron syntax")]
