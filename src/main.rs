@@ -1,14 +1,13 @@
 use std::collections::HashMap;
-use std::error::Error;
 use std::io::Write;
 use std::net::{Ipv4Addr, UdpSocket, TcpStream};
 use std::process::Command;
 use std::str::{self, FromStr};
 use std::fmt::Display;
 use clap::Parser;
-use serde_json::{json};
+use serde_json::json;
 
-#[allow(unused, unused_variables, dead_code)]
+#[allow(unused, unused_imports, unused_variables, dead_code)]
 
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -64,8 +63,6 @@ struct LoggerOptions {
     local_ip: String,
     local_port: String,
 
-    //timeout used to sleep between requests
-    timeout: f32,
 }
 
 
@@ -120,93 +117,72 @@ fn warning(options: &LoggerOptions, message: String) {
 }
 
 //arp spoofing detector
-fn detector(options: LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
+fn detector(options: &LoggerOptions) {
     
     let mut arp_cache: HashMap<Ipv4Addr, String> = HashMap::new();
 
-    loop {
+    let output = Command::new("arp")
+        .arg("-a")
+        .output()
+        .expect("Failed to execute command");
 
-        let output = Command::new("arp")
-            .arg("-a")
-            .output()
-            .expect("Failed to execute command");
+    let arp_table = str::from_utf8(&output.stdout).unwrap();
+    let mut is_spoofed = false;
 
-        let arp_table = str::from_utf8(&output.stdout).unwrap();
-        let mut is_spoofed = false;
+    for line in arp_table.lines() {
 
-        for line in arp_table.lines() {
+        let parts: Vec<&str> = line.split_whitespace().collect();
 
-            let parts: Vec<&str> = line.split_whitespace().collect();
+        if parts.len() == 3 {
 
-            if parts.len() == 3 {
+            let ip = parts[0].parse::<Ipv4Addr>().unwrap();
+            let mac = parts[1].to_string();
 
-                let ip = parts[0].parse::<Ipv4Addr>().unwrap();
-                let mac = parts[1].to_string();
+            if arp_cache.contains_key(&ip) && arp_cache.get(&ip).unwrap() != &mac {
 
-                if arp_cache.contains_key(&ip) && arp_cache.get(&ip).unwrap() != &mac {
+                println!("ARP spoofing detected for IP address {}", ip);
 
-                    println!("ARP spoofing detected for IP address {}", ip);
+                let mut message = HashMap::new();
+                message.insert("description", "ARP spoofing detected");
 
-                    let mut message = HashMap::new();
-                    message.insert("description", "ARP spoofing detected");
+                let ip_string = ip.to_string();
+                message.insert("ip", &ip_string);
 
-                    let ip_string = ip.to_string();
-                    message.insert("ip", &ip_string);
+                message.insert("First MAC", arp_cache.get(&ip).unwrap());
+                message.insert("Second MAC", &mac);
 
-                    message.insert("First MAC", arp_cache.get(&ip).unwrap());
-                    message.insert("Second MAC", &mac);
+                let json_message = json!(message).to_string();
 
-                    let json_message = json!(message).to_string();
+                warning(&options, json_message);
 
-                    warning(&options, json_message);
-
-                    is_spoofed = true;
-
-                }
-
-                arp_cache.insert(ip, mac);
+                is_spoofed = true;
 
             }
+
+            arp_cache.insert(ip, mac);
+
         }
-
-        if !is_spoofed {
-
-            println!("No ARP spoofing detected");
-            
-            let mut message = HashMap::new();
-            message.insert("description", "ARP spoofing not detected");
-
-            let json_message = json!(message).to_string();
-
-            warning(&options, json_message);
-            
-        }
-
-        std::thread::sleep(std::time::Duration::from_secs_f32(options.timeout));
     }
+
+    if !is_spoofed {
+
+        println!("No ARP spoofing detected");
+        
+        let mut message = HashMap::new();
+        message.insert("description", "ARP spoofing not detected");
+
+        let json_message = json!(message).to_string();
+
+        warning(&options, json_message);
+        
+    }
+    
 }
-
-
 
 //structure that handles CLI arguments/flags
 #[derive(Parser)]
-#[command(author = "tuchaVshortah", version = "1.0.1", about = "ARP spoofing detector program", long_about = None)]
+#[command(author = "tuchaVshortah", version = "1.2.0", about = "ARP spoofing detector program", long_about = None)]
 struct Cli {
-
-    #[arg(short = 'i', long, help="Installs a service that allows the program to run as a background process")]
-    install_service: bool,
-
-    #[arg(short = 'c', long, help="Checks if service is installed")]
-    check_service: bool,
-
-    #[arg(short = 'd', long, help="Deletes the service only if it has already been installed")]
-    delete_service: bool,
-
-    #[arg(short = 'x', long, help="Starts the program in background")]
-    start_service: bool,
-
-    #[arg(short = 's', long, help="Stops the background process")]
-    stop_service: bool,
 
     #[arg(short, long, default_value="tcp", help="Specifies which protocol to use. Can be tcp or udp (case sensitive)")]
     proto: Proto,
@@ -223,101 +199,20 @@ struct Cli {
     #[arg(long, default_value_t = String::from("9999"), help="Specifies the local port to use. Required when udp is used")]
     local_port: String,
 
-    #[arg(long, default_value_t = 3.0)]
-    timeout: f32,
-
 }
-
-
-fn check_service_installed() -> bool {
-
-    let  check_service_command = "& { $service = Get-Service -Name \"ArpSpoofDetectService\" -ErrorAction SilentlyContinue ; Write-Output $service.Length }";
-    
-    let output =  Command::new("powershell")
-        .args(["-Command", check_service_command])
-        .output()
-        .expect("Failed to execute the checking command");
-
-    let content = str::from_utf8(&output.stdout).unwrap();
-
-    content.contains("1")
-}
-
-
-
-
 
 //the main function
-fn main() -> Result<(), Box<dyn Error>>{
-
-    let install_service_command = "New-Service -Name \"ArpSpoofDetectService\" -DisplayName \"ARP spoofing detector service\" -Description \"A service that detects ARP spoofing in your network\" -StartupType Manual -BinaryPathName \"arp-spoofing-detector.exe\"".split_whitespace();
-    let start_service_command = "Start-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
-    let stop_service_command = "Stop-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
-    let delete_service_command = "sc.exe Delete \"ArpSpoofDetectService\"".split_whitespace();
-
+fn main() {
     let cli = Cli::parse();
+    
+    let options = LoggerOptions {
+        syslog_ip: cli.syslog_ip.to_string(),
+        syslog_port: cli.syslog_port,
+        proto: cli.proto,
+        local_ip: cli.local_ip.to_string(),
+        local_port: cli.local_port,
+    };
 
-    if cli.install_service {
-        Command::new("powershell")
-            .args(install_service_command)
-            .output()
-            .expect("Failed to execute the install command");
-
-    } else if cli.check_service {
-
-        if check_service_installed() {
-
-            println!("The \"ArpSpoofDetectService\" service is installed");
-
-        } else {
-
-            println!("The \"ArpSpoofDetectService\" service is not installed");
-
-        }
-
-    } else if cli.delete_service {
-
-        if !check_service_installed() {
-
-            panic!("Cannot delete service: Not Installed")
-
-        } else {
-
-            Command::new("powershell")
-            .args(delete_service_command)
-            .output()
-            .expect("Failed to execute the delete service command");
-
-        }
-    } else if cli.start_service {
-
-        Command::new("powershell")
-            .args(start_service_command)
-            .output()
-            .expect("Failed to execute the start service command");
-
-    } else if cli.stop_service {
-
-        Command::new("powershell")
-            .args(stop_service_command)
-            .output()
-            .expect("Failed to execute the stop service command");
-
-    } else {
-
-        let options = LoggerOptions {
-            syslog_ip: cli.syslog_ip.to_string(),
-            syslog_port: cli.syslog_port,
-            proto: cli.proto,
-            local_ip: cli.local_ip.to_string(),
-            local_port: cli.local_port,
-            timeout: cli.timeout,
-        };
-
-        return detector(options);
-        
-    }
-
-    Ok(())
+    detector(&options);
 
 }
