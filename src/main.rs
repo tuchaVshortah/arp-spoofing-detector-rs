@@ -17,8 +17,8 @@ use std::ffi::OsString;
 use windows_service::service_dispatcher;
 use std::time::Duration;
 use windows_service::service::{
-    ServiceControl, ServiceControlAccept, ServiceExitCode, ServiceState, ServiceStatus,
-    ServiceType,
+    Service, ServiceAccess, ServiceControl, ServiceControlAccept, ServiceErrorControl,
+    ServiceExitCode, ServiceInfo, ServiceStartType, ServiceState, ServiceStatus, ServiceType,
 };
 use windows_service::service_control_handler::{self, ServiceControlHandlerResult};
 
@@ -222,7 +222,12 @@ fn run_detector_service(options: LoggerOptions) -> Result<(), Box<dyn std::error
 
      // Register system service event handler.
      // The returned status handle should be used to report service status changes to the system.
-     let status_handle = service_control_handler::register("ArpSpoofDetectService", event_handler)?;
+     let status_handle = match service_control_handler::register("ArpSpoofDetectService", event_handler) {
+        Ok(handle) => handle,
+        Err(error) => {
+            panic!("Could not register a service control handler");
+        }
+     };
 
      // Tell the system that service is running
      status_handle.set_service_status(ServiceStatus {
@@ -324,6 +329,36 @@ struct Cli {
     #[arg(long, default_value_t = 3.0)]
     timeout: f32,
 
+}
+
+fn get_service_handle(service_access: ServiceAccess) -> windows_service::Result<Service> {
+    use windows_service::service::{
+        Service, ServiceAccess, ServiceControl, ServiceControlAccept, ServiceErrorControl,
+        ServiceExitCode, ServiceInfo, ServiceStartType, ServiceState, ServiceStatus, ServiceType,
+    };
+    use windows_service::service_control_handler::ServiceControlHandlerResult;
+    use windows_service::service_manager::{ServiceManager, ServiceManagerAccess};
+    use windows_service::{service_control_handler, service_dispatcher};
+
+    let manager = ServiceManager::local_computer(None::<&str>, ServiceManagerAccess::CONNECT)?;
+    let service = manager.open_service("ArpSpoofDetectService", service_access)?;
+    Ok(service)
+}
+
+fn start_service() -> windows_service::Result<()> {
+    use std::ffi::{OsStr, OsString};
+    use windows_service::service::{
+        Service, ServiceAccess, ServiceControl, ServiceControlAccept, ServiceErrorControl,
+        ServiceExitCode, ServiceInfo, ServiceStartType, ServiceState, ServiceStatus, ServiceType,
+    };
+    use windows_service::service_control_handler::ServiceControlHandlerResult;
+    use windows_service::service_manager::{ServiceManager, ServiceManagerAccess};
+    use windows_service::{service_control_handler, service_dispatcher};
+    let service = get_service_handle(ServiceAccess::QUERY_STATUS | ServiceAccess::START)?;
+    if service.query_status()?.current_state != ServiceState::Running {
+        service.start(&[OsStr::new("-p tcp --syslog-ip 127.0.0.1 --syslog-port 1469 --timeout 3")])?
+    }
+    Ok(())
 }
 
 fn install_service(cli: &Cli) -> windows_service::Result<()>{
@@ -490,7 +525,7 @@ fn main() -> Result<(), windows_service::Error>{
         //    .output()
         //    .expect("Failed to execute the start service command");
         println!("Starting service");
-        service_dispatcher::start("ArpSpoofDetectService", ffi_detector_service_main)?;
+        start_service()?
 
     } else if cli.stop_service {
 
