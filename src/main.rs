@@ -6,8 +6,6 @@ use std::str::{self, FromStr};
 use std::fmt::Display;
 use clap::Parser;
 use serde_json::json;
-use job_scheduler_ng::{Job, JobScheduler};
-use std::time::Duration;
 
 #[allow(unused, unused_imports, unused_variables, dead_code)]
 
@@ -186,9 +184,6 @@ fn detector(options: &LoggerOptions) {
 #[command(author = "tuchaVshortah", version = "1.2.0", about = "ARP spoofing detector program", long_about = None)]
 struct Cli {
 
-    #[arg(short, long, default_value_t = String::from("1/10 * * * * *"), help="Specifiy how often the job should be run using the Cron syntax")]
-    job_schedule: String,
-
     #[arg(short, long, default_value="tcp", help="Specifies which protocol to use. Can be tcp or udp (case sensitive)")]
     proto: Proto,
 
@@ -208,10 +203,8 @@ struct Cli {
 
 //the main function
 fn main() {
-
     let cli = Cli::parse();
-    let mut sched = JobScheduler::new();
-
+    
     let options = LoggerOptions {
         syslog_ip: cli.syslog_ip.to_string(),
         syslog_port: cli.syslog_port,
@@ -220,13 +213,6 @@ fn main() {
         local_port: cli.local_port,
     };
 
-    let job_id = sched.add(Job::new(cli.job_schedule.as_str().parse().unwrap(), move || {
-        detector(&options);
-    }));
-    println!("Job id: {}", job_id);
+    detector(&options);
 
-    loop {
-        sched.tick();
-        std::thread::sleep(Duration::from_millis(500));
-    }
 }
