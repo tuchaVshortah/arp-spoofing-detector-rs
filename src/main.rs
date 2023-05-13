@@ -232,7 +232,7 @@ struct Cli {
 }
 
 //the main function
-fn main() -> Result<(), windows_service::Error>{
+fn main() {
 
     let cli = Cli::parse();
 
