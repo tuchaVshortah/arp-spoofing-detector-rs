@@ -22,9 +22,6 @@ use windows_service::service::{
 };
 use windows_service::service_control_handler::{self, ServiceControlHandlerResult};
 
-
-define_windows_service!(ffi_detector_service_main, detector_service_main);
-
 #[allow(unused, unused_imports, unused_variables, dead_code)]
 
 
@@ -264,7 +261,10 @@ fn run_detector_service(options: LoggerOptions) -> Result<(), Box<dyn std::error
      Ok(())
 }
 
+define_windows_service!(ffi_detector_service_main, detector_service_main);
+
 fn detector_service_main(arguments: Vec<OsString>) {
+    println!("detector_service_main");
 
     let cli = Cli::parse();
 
@@ -326,29 +326,39 @@ struct Cli {
 
 }
 
-fn install_service(cli: &Cli) {
+fn install_service(cli: &Cli) -> windows_service::Result<()>{
 
-    let cwd = env::current_dir().unwrap().into_os_string().into_string().unwrap();
+    use std::ffi::OsString;
+    use windows_service::{
+        service::{ServiceAccess, ServiceErrorControl, ServiceInfo, ServiceStartType, ServiceType},
+        service_manager::{ServiceManager, ServiceManagerAccess},
+    };
 
-        let install_service_string;
-        
-        match cli.proto {
-            Proto::Udp => {
-                install_service_string = format!("New-Service -Name \"ArpSpoofDetectService\" -DisplayName \"ARP spoofing detector service\" -Description \"A service that detects ARP spoofing in your network\" -StartupType Automatic -BinaryPathName \"{}\\arp-spoofing-detector.exe -p udp --local-ip {} --local-port {} --syslog-ip {} --syslog-port {} --timeout {}\"", cwd, cli.local_ip, cli.local_port, cli.syslog_ip, cli.syslog_port, cli.timeout);
-            },
+    let manager_access = ServiceManagerAccess::CONNECT | ServiceManagerAccess::CREATE_SERVICE;
+    let service_manager = ServiceManager::local_computer(None::<&str>, manager_access)?;
 
-            Proto::Tcp => {
-                install_service_string = format!("New-Service -Name \"ArpSpoofDetectService\" -DisplayName \"ARP spoofing detector service\" -Description \"A service that detects ARP spoofing in your network\" -StartupType Automatic -BinaryPathName \"{}\\arp-spoofing-detector.exe -p tcp --syslog-ip {} --syslog-port {} --timeout {}\"", cwd, cli.syslog_ip, cli.syslog_port, cli.timeout);
-            }
-        }
-        
-        let install_service_command = install_service_string.split_whitespace();
+    // This example installs the service defined in `examples/ping_service.rs`.
+    // In the real world code you would set the executable path to point to your own binary
+    // that implements windows service.
+    let service_binary_path = ::std::env::current_exe()
+        .unwrap()
+        .with_file_name("arp-spoofing-detector.exe");
 
-
-        Command::new("powershell")
-            .args(install_service_command)
-            .output()
-            .expect("Failed to execute the install command");
+    let service_info = ServiceInfo {
+        name: OsString::from("ArpSpoofDetectService"),
+        display_name: OsString::from("ARP spoofing detector service"),
+        service_type: ServiceType::OWN_PROCESS,
+        start_type: ServiceStartType::AutoStart,
+        error_control: ServiceErrorControl::Normal,
+        executable_path: service_binary_path,
+        launch_arguments: vec![],
+        dependencies: vec![],
+        account_name: None, // run as System
+        account_password: None,
+    };
+    let service = service_manager.create_service(&service_info, ServiceAccess::CHANGE_CONFIG)?;
+    service.set_description("This service detects ARP spoofing in the local network and sends logs to a remote server")?;
+    Ok(())
 
 }
 
@@ -441,8 +451,8 @@ fn main() -> Result<(), windows_service::Error>{
         //    .args(start_service_command)
         //    .output()
         //    .expect("Failed to execute the start service command");
-
-        service_dispatcher::start("ArpSpoofDetectService", ffi_service_main)?;
+        println!("Starting service");
+        service_dispatcher::start("ArpSpoofDetectService", ffi_detector_service_main)?;
 
     } else if cli.stop_service {
 
