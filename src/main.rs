@@ -229,7 +229,5 @@ fn main() {
     };
 
     detector(&options).unwrap();
-        
-    }
 
 }
