@@ -1,6 +1,4 @@
 use std::collections::HashMap;
-use std::env;
-use std::error::Error;
 use std::io::Write;
 use std::net::{Ipv4Addr, UdpSocket, TcpStream};
 use std::process::Command;
