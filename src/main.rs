@@ -8,6 +8,8 @@ use std::str::{self, FromStr};
 use std::fmt::Display;
 use clap::Parser;
 use serde_json::json;
+use job_scheduler_ng::{Job, JobScheduler};
+use std::time::Duration;
 
 #[allow(unused, unused_imports, unused_variables, dead_code)]
 
@@ -64,7 +66,7 @@ struct LoggerOptions {
     //local machine
     local_ip: String,
     local_port: String,
-    
+
 }
 
 
@@ -211,7 +213,7 @@ struct Cli {
 fn main() {
 
     let cli = Cli::parse();
-
+    let mut sched = JobScheduler::new();
 
     let options = LoggerOptions {
         syslog_ip: cli.syslog_ip.to_string(),
@@ -221,6 +223,13 @@ fn main() {
         local_port: cli.local_port,
     };
 
-    detector(&options).unwrap();
+    let job_id = sched.add(Job::new(cli.job_schedule.as_str().parse().unwrap(), move || {
+        detector(&options);
+    }));
+    println!("Job id: {}", job_id);
 
+    loop {
+        sched.tick();
+        std::thread::sleep(Duration::from_millis(500));
+    }
 }
