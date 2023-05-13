@@ -236,82 +236,17 @@ fn main() {
 
     let cli = Cli::parse();
 
-    if cli.install_service {
 
-        install_service(&cli);
+    let options = LoggerOptions {
+        syslog_ip: cli.syslog_ip.to_string(),
+        syslog_port: cli.syslog_port,
+        proto: cli.proto,
+        local_ip: cli.local_ip.to_string(),
+        local_port: cli.local_port,
+        timeout: cli.timeout,
+    };
 
-    } else if cli.check_service {
-
-        if check_service_installed() {
-
-            println!("The \"ArpSpoofDetectService\" service is installed");
-
-        } else {
-
-            println!("The \"ArpSpoofDetectService\" service is not installed");
-
-        }
-
-    } else if cli.delete_service {
-
-        if !check_service_installed() {
-
-            panic!("Could not delete the service: Not Installed")
-
-        } else {
-
-            delete_service();
-
-        }
-
-    } else if cli.reinstall_service {
-
-        reinstall_service(&cli);
-
-    } else if cli.start_service {
-
-        //let start_service_command = "Start-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
-
-        //Command::new("powershell")
-        //    .args(start_service_command)
-        //    .output()
-        //    .expect("Failed to execute the start service command");
-        println!("Starting service");
-        start_service()?
-
-    } else if cli.stop_service {
-
-        let stop_service_command = "Stop-Service -Name \"ArpSpoofDetectService\"".split_whitespace();
-
-        Command::new("powershell")
-            .args(stop_service_command)
-            .output()
-            .expect("Failed to execute the stop service command");
-
-    } else {
-
-        let options = LoggerOptions {
-            syslog_ip: cli.syslog_ip.to_string(),
-            syslog_port: cli.syslog_port,
-            proto: cli.proto,
-            local_ip: cli.local_ip.to_string(),
-            local_port: cli.local_port,
-            timeout: cli.timeout,
-        };
-
-        /*
-        let mut status = unsafe { mem::zeroed::<Services::SERVICE_STATUS>() };
-        status.dwServiceType = Services::SERVICE_WIN32_OWN_PROCESS;
-        status.dwCurrentState = Services::SERVICE_RUNNING;
-        status.dwControlsAccepted = Services::SERVICE_ACCEPT_STOP;
-        status.dwWin32ExitCode = 0;
-        status.dwServiceSpecificExitCode = 0;
-        status.dwCheckPoint = 0;
-        status.dwWaitHint = 3000;
-        */
-        
-        //Services::SetServiceStatus(Services::SERVICE_STATUS_HANDLE, status);
-        detector(&options).unwrap();
+    detector(&options).unwrap();
         
     }
 
