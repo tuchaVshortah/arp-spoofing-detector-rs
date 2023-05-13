@@ -40,7 +40,6 @@ ARP spoofing detector program
 Usage: arp-spoofing-detector.exe [OPTIONS]
 
 Options:
-  -j, --job-schedule <JOB_SCHEDULE>  Specifiy how often the job should be run using the Cron syntax [default: "1/10 * * * * *"]
   -p, --proto <PROTO>                Specifies which protocol to use. Can be tcp or udp (case sensitive) [default: tcp]
       --syslog-ip <SYSLOG_IP>        Takes IP address of the Syslog server [default: 127.0.0.1]
       --syslog-port <SYSLOG_PORT>    Specifies the server port to connect to [default: 1468]
@@ -53,13 +52,13 @@ Options:
 
 ## Examples
 
-Start a job that sends a log every 10 seconds to the remote using TCP:
+Start a job that sends a log to the remote using TCP:
 
 ```powershell
     .\arp-spoofing-detector.exe -p tcp --syslog-ip <remote-syslog-ip> --syslog-port <remote-syslog-port>
 ```
 
-Start a job that sends a log every 10 seconds to the remote using UDP:
+Start a job that sends a log to the remote using UDP:
 
 ```powershell
     .\arp-spoofing-detector.exe -p udp --local-ip <local-machine-ip> --local-port <local-machine-port> --syslog-ip <remote-syslog-ip> --syslog-port <remote-syslog-port>
