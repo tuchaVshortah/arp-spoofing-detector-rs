@@ -6,21 +6,8 @@ use std::net::{Ipv4Addr, UdpSocket, TcpStream};
 use std::process::Command;
 use std::str::{self, FromStr};
 use std::fmt::Display;
-use std::sync::mpsc;
 use clap::Parser;
 use serde_json::json;
-
-#[macro_use]
-extern crate windows_service;
-
-use std::ffi::OsString;
-use windows_service::service_dispatcher;
-use std::time::Duration;
-use windows_service::service::{
-    Service, ServiceAccess, ServiceControl, ServiceControlAccept, ServiceErrorControl,
-    ServiceExitCode, ServiceInfo, ServiceStartType, ServiceState, ServiceStatus, ServiceType,
-};
-use windows_service::service_control_handler::{self, ServiceControlHandlerResult};
 
 #[allow(unused, unused_imports, unused_variables, dead_code)]
 
@@ -138,154 +125,67 @@ fn detector(options: &LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
     
     let mut arp_cache: HashMap<Ipv4Addr, String> = HashMap::new();
 
-    let output = Command::new("arp")
-        .arg("-a")
-        .output()
-        .expect("Failed to execute command");
+    loop {
 
-    let arp_table = str::from_utf8(&output.stdout).unwrap();
-    let mut is_spoofed = false;
+        let output = Command::new("arp")
+            .arg("-a")
+            .output()
+            .expect("Failed to execute command");
 
-    for line in arp_table.lines() {
+        let arp_table = str::from_utf8(&output.stdout).unwrap();
+        let mut is_spoofed = false;
 
-        let parts: Vec<&str> = line.split_whitespace().collect();
+        for line in arp_table.lines() {
 
-        if parts.len() == 3 {
+            let parts: Vec<&str> = line.split_whitespace().collect();
 
-            let ip = parts[0].parse::<Ipv4Addr>().unwrap();
-            let mac = parts[1].to_string();
+            if parts.len() == 3 {
 
-            if arp_cache.contains_key(&ip) && arp_cache.get(&ip).unwrap() != &mac {
+                let ip = parts[0].parse::<Ipv4Addr>().unwrap();
+                let mac = parts[1].to_string();
 
-                println!("ARP spoofing detected for IP address {}", ip);
+                if arp_cache.contains_key(&ip) && arp_cache.get(&ip).unwrap() != &mac {
 
-                let mut message = HashMap::new();
-                message.insert("description", "ARP spoofing detected");
+                    println!("ARP spoofing detected for IP address {}", ip);
 
-                let ip_string = ip.to_string();
-                message.insert("ip", &ip_string);
+                    let mut message = HashMap::new();
+                    message.insert("description", "ARP spoofing detected");
 
-                message.insert("First MAC", arp_cache.get(&ip).unwrap());
-                message.insert("Second MAC", &mac);
+                    let ip_string = ip.to_string();
+                    message.insert("ip", &ip_string);
 
-                let json_message = json!(message).to_string();
+                    message.insert("First MAC", arp_cache.get(&ip).unwrap());
+                    message.insert("Second MAC", &mac);
 
-                warning(&options, json_message);
+                    let json_message = json!(message).to_string();
 
-                is_spoofed = true;
+                    warning(&options, json_message);
+
+                    is_spoofed = true;
+
+                }
+
+                arp_cache.insert(ip, mac);
 
             }
-
-            arp_cache.insert(ip, mac);
-
         }
+
+        if !is_spoofed {
+
+            println!("No ARP spoofing detected");
+            
+            let mut message = HashMap::new();
+            message.insert("description", "ARP spoofing not detected");
+
+            let json_message = json!(message).to_string();
+
+            warning(&options, json_message);
+            
+        }
+
+        std::thread::sleep(std::time::Duration::from_secs_f32(options.timeout));
     }
-
-    if !is_spoofed {
-
-        println!("No ARP spoofing detected");
-        
-        let mut message = HashMap::new();
-        message.insert("description", "ARP spoofing not detected");
-
-        let json_message = json!(message).to_string();
-
-        warning(&options, json_message);
-        
-    }
-
-    std::thread::sleep(std::time::Duration::from_secs_f32(options.timeout));
     Ok(())
-}
-
-fn run_detector_service(options: LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
-
-     // Create a channel to be able to poll a stop event from the service worker loop.
-     let (shutdown_tx, shutdown_rx) = mpsc::channel();
-
-     // Define system service event handler that will be receiving service events.
-     let event_handler = move |control_event| -> ServiceControlHandlerResult {
-         match control_event {
-             // Notifies a service to report its current status information to the service
-             // control manager. Always return NoError even if not implemented.
-             ServiceControl::Interrogate => ServiceControlHandlerResult::NoError,
-
-             // Handle stop
-             ServiceControl::Stop => {
-                 shutdown_tx.send(()).unwrap();
-                 ServiceControlHandlerResult::NoError
-             }
-
-             _ => ServiceControlHandlerResult::NotImplemented,
-         }
-     };
-
-     // Register system service event handler.
-     // The returned status handle should be used to report service status changes to the system.
-     let status_handle = match service_control_handler::register("ArpSpoofDetectService", event_handler) {
-        Ok(handle) => handle,
-        Err(error) => {
-            panic!("Could not register a service control handler");
-        }
-     };
-
-     // Tell the system that service is running
-     status_handle.set_service_status(ServiceStatus {
-         service_type: ServiceType::OWN_PROCESS,
-         current_state: ServiceState::Running,
-         controls_accepted: ServiceControlAccept::STOP,
-         exit_code: ServiceExitCode::Win32(0),
-         checkpoint: 0,
-         wait_hint: Duration::default(),
-         process_id: None,
-     })?;
-
-     loop {
-         detector(&options)?;
-         // Poll shutdown event.
-         match shutdown_rx.recv_timeout(Duration::from_secs(1)) {
-             // Break the loop either upon stop or channel disconnect
-             Ok(_) | Err(mpsc::RecvTimeoutError::Disconnected) => break,
-
-             // Continue work if no events were received within the timeout
-             Err(mpsc::RecvTimeoutError::Timeout) => (),
-         };
-     }
-
-     // Tell the system that service has stopped.
-     status_handle.set_service_status(ServiceStatus {
-         service_type: ServiceType::OWN_PROCESS,
-         current_state: ServiceState::Stopped,
-         controls_accepted: ServiceControlAccept::empty(),
-         exit_code: ServiceExitCode::Win32(0),
-         checkpoint: 0,
-         wait_hint: Duration::default(),
-         process_id: None,
-     })?;
-
-     Ok(())
-}
-
-define_windows_service!(ffi_detector_service_main, detector_service_main);
-
-fn detector_service_main(arguments: Vec<OsString>) {
-    println!("detector_service_main");
-
-    let cli = Cli::parse();
-
-    let options = LoggerOptions {
-        syslog_ip: cli.syslog_ip.to_string(),
-        syslog_port: cli.syslog_port,
-        proto: cli.proto,
-        local_ip: cli.local_ip.to_string(),
-        local_port: cli.local_port,
-        timeout: cli.timeout,
-    };
-
-    if let Err(error) = run_detector_service(options) {
-        println!("Something bad happened when statring the service")
-    }
-
 }
 
 //structure that handles CLI arguments/flags
@@ -330,154 +230,6 @@ struct Cli {
     timeout: f32,
 
 }
-
-fn get_service_handle(service_access: ServiceAccess) -> windows_service::Result<Service> {
-    use windows_service::service::{
-        Service, ServiceAccess, ServiceControl, ServiceControlAccept, ServiceErrorControl,
-        ServiceExitCode, ServiceInfo, ServiceStartType, ServiceState, ServiceStatus, ServiceType,
-    };
-    use windows_service::service_control_handler::ServiceControlHandlerResult;
-    use windows_service::service_manager::{ServiceManager, ServiceManagerAccess};
-    use windows_service::{service_control_handler, service_dispatcher};
-
-    let manager = ServiceManager::local_computer(None::<&str>, ServiceManagerAccess::CONNECT)?;
-    let service = manager.open_service("ArpSpoofDetectService", service_access)?;
-    Ok(service)
-}
-
-fn start_service() -> windows_service::Result<()> {
-    use std::ffi::{OsStr, OsString};
-    use windows_service::service::{
-        Service, ServiceAccess, ServiceControl, ServiceControlAccept, ServiceErrorControl,
-        ServiceExitCode, ServiceInfo, ServiceStartType, ServiceState, ServiceStatus, ServiceType,
-    };
-    use windows_service::service_control_handler::ServiceControlHandlerResult;
-    use windows_service::service_manager::{ServiceManager, ServiceManagerAccess};
-    use windows_service::{service_control_handler, service_dispatcher};
-    let service = get_service_handle(ServiceAccess::QUERY_STATUS | ServiceAccess::START)?;
-    if service.query_status()?.current_state != ServiceState::Running {
-        service.start(&[OsStr::new("-p tcp --syslog-ip 127.0.0.1 --syslog-port 1469 --timeout 3")])?
-    }
-    Ok(())
-}
-
-fn install_service(cli: &Cli) -> windows_service::Result<()>{
-
-    use std::ffi::OsString;
-    use windows_service::{
-        service::{ServiceAccess, ServiceErrorControl, ServiceInfo, ServiceStartType, ServiceType},
-        service_manager::{ServiceManager, ServiceManagerAccess},
-    };
-
-    let manager_access = ServiceManagerAccess::CONNECT | ServiceManagerAccess::CREATE_SERVICE;
-    let service_manager = ServiceManager::local_computer(None::<&str>, manager_access)?;
-
-    // This example installs the service defined in `examples/ping_service.rs`.
-    // In the real world code you would set the executable path to point to your own binary
-    // that implements windows service.
-    let service_binary_path = ::std::env::current_exe()
-        .unwrap()
-        .with_file_name("arp-spoofing-detector.exe");
-
-    let service_info = ServiceInfo {
-        name: OsString::from("ArpSpoofDetectService"),
-        display_name: OsString::from("ARP spoofing detector service"),
-        service_type: ServiceType::OWN_PROCESS,
-        start_type: ServiceStartType::AutoStart,
-        error_control: ServiceErrorControl::Normal,
-        executable_path: service_binary_path,
-        launch_arguments: vec![],
-        dependencies: vec![],
-        account_name: None, // run as System
-        account_password: None,
-    };
-    let service = service_manager.create_service(&service_info, ServiceAccess::CHANGE_CONFIG)?;
-    service.set_description("This service detects ARP spoofing in the local network and sends logs to a remote server")?;
-    Ok(())
-
-}
-
-fn check_service_installed() -> bool {
-
-    let  check_service_command = "& { $service = Get-Service -Name \"ArpSpoofDetectService\" -ErrorAction SilentlyContinue ; Write-Output $service.Length }";
-    
-    let output =  Command::new("powershell")
-        .args(["-Command", check_service_command])
-        .output()
-        .expect("Failed to execute the checking command");
-
-    let content = str::from_utf8(&output.stdout).unwrap();
-
-    content.contains("1")
-
-}
-
-fn delete_service() -> windows_service::Result<()> {
-    use std::{
-        thread::sleep,
-        time::{Duration, Instant},
-    };
-
-    use windows_service::{
-        service::{ServiceAccess, ServiceState},
-        service_manager::{ServiceManager, ServiceManagerAccess},
-    };
-    use windows_sys::Win32::Foundation::ERROR_SERVICE_DOES_NOT_EXIST;
-
-    let manager_access = ServiceManagerAccess::CONNECT;
-    let service_manager = ServiceManager::local_computer(None::<&str>, manager_access)?;
-
-    let service_access = ServiceAccess::QUERY_STATUS | ServiceAccess::STOP | ServiceAccess::DELETE;
-    let service = service_manager.open_service("ArpSpoofDetectService", service_access)?;
-
-    // The service will be marked for deletion as long as this function call succeeds.
-    // However, it will not be deleted from the database until it is stopped and all open handles to it are closed.
-    service.delete()?;
-    // Our handle to it is not closed yet. So we can still query it.
-    if service.query_status()?.current_state != ServiceState::Stopped {
-        // If the service cannot be stopped, it will be deleted when the system restarts.
-        service.stop()?;
-    }
-    // Explicitly close our open handle to the service. This is automatically called when `service` goes out of scope.
-    drop(service);
-
-    // Win32 API does not give us a way to wait for service deletion.
-    // To check if the service is deleted from the database, we have to poll it ourselves.
-    let start = Instant::now();
-    let timeout = Duration::from_secs(5);
-    while start.elapsed() < timeout {
-        if let Err(windows_service::Error::Winapi(e)) =
-            service_manager.open_service("ArpSpoofDetectService", ServiceAccess::QUERY_STATUS)
-        {
-            if e.raw_os_error() == Some(ERROR_SERVICE_DOES_NOT_EXIST as i32) {
-                println!("ArpSpoofDetectService is deleted.");
-                return Ok(());
-            }
-        }
-        sleep(Duration::from_secs(1));
-    }
-    println!("ArpSpoofDetectService is marked for deletion.");
-
-    Ok(())
-}
-
-fn reinstall_service(cli: &Cli) {
-
-    if !check_service_installed() {
-
-        panic!("Could not reinstall the service: Not Installed")
-
-    } else {
-
-        delete_service();
-
-    }
-
-    install_service(cli);
-
-}
-
-
 
 //the main function
 fn main() -> Result<(), windows_service::Error>{
