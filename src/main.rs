@@ -121,7 +121,7 @@ fn warning(options: &LoggerOptions, message: String) {
 }
 
 //arp spoofing detector
-fn detector(options: &LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
+fn detector(options: &LoggerOptions) {
     
     let mut arp_cache: HashMap<Ipv4Addr, String> = HashMap::new();
 
@@ -181,7 +181,6 @@ fn detector(options: &LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
         
     }
     
-    Ok(())
 }
 
 //structure that handles CLI arguments/flags
