@@ -193,24 +193,6 @@ fn detector(options: &LoggerOptions) -> Result<(), Box<dyn std::error::Error>> {
 #[command(author = "tuchaVshortah", version = "1.0.1", about = "ARP spoofing detector program", long_about = None)]
 struct Cli {
 
-    #[arg(short = 'i', long, help="Installs a service that allows the program to run as a background process")]
-    install_service: bool,
-
-    #[arg(short = 'c', long, help="Checks if service is installed")]
-    check_service: bool,
-
-    #[arg(short = 'd', long, help="Deletes the service only if it has already been installed")]
-    delete_service: bool,
-
-    #[arg(short = 'r', long, help="Reinstalls the service only if it has already been installed (simple wrapper for --install-service and --delete-service)")]
-    reinstall_service: bool,
-
-    #[arg(short = 'x', long, help="Starts the program in background")]
-    start_service: bool,
-
-    #[arg(short = 's', long, help="Stops the background process")]
-    stop_service: bool,
-
     #[arg(short, long, default_value="tcp", help="Specifies which protocol to use. Can be tcp or udp (case sensitive)")]
     proto: Proto,
 
