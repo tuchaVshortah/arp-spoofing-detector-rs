@@ -125,8 +125,20 @@ fn detector(options: &LoggerOptions) {
         .arg("-a")
         .output()
         .expect("Failed to execute command");
+    
+    let mut skip = false;
 
-    let arp_table = str::from_utf8(&output.stdout).unwrap();
+    let arp_table = str::from_utf8(&output.stdout).unwrap_or_else(|err| {
+        eprintln!("Couldn't collect ARP data. Ensure your encoding is correct (UTF-8)");
+        eprintln!("Full Error: {}", err);
+        skip = true;
+        ""
+    });
+
+    if skip {
+        return;
+    }
+
     let mut is_spoofed = false;
 
     for line in arp_table.lines() {
