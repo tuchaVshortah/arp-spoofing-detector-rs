@@ -213,6 +213,8 @@ fn main() {
         local_port: cli.local_port,
     };
 
-    detector(&options);
+    loop {
+        detector(&options);
+    }
 
 }
