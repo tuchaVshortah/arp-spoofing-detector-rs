@@ -199,6 +199,8 @@ struct Cli {
     #[arg(long, default_value_t = String::from("9999"), help="Specifies the local port to use. Required when udp is used")]
     local_port: String,
 
+    #[arg(long, default_value_t = 3.0)]
+    timeout: f32,
 }
 
 //the main function
@@ -215,6 +217,7 @@ fn main() {
 
     loop {
         detector(&options);
+        std::thread::sleep(std::time::Duration::from_secs_f32(cli.timeout));
     }
 
 }
