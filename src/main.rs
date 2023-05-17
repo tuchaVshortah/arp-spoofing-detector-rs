@@ -10,8 +10,6 @@ use encoding_rs::*;
 
 #[allow(unused, unused_imports, unused_variables, dead_code)]
 
-fn decode_from_WINDOWS_1251(output: &Output) {}
-
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 enum Proto {
     Udp,
