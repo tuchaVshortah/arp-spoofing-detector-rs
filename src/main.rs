@@ -201,7 +201,7 @@ fn detector(options: &LoggerOptions) {
 
 //structure that handles CLI arguments/flags
 #[derive(Parser)]
-#[command(author = "tuchaVshortah", version = "1.2.0", about = "ARP spoofing detector program", long_about = None)]
+#[command(author = "tuchaVshortah", version = "1.2.1", about = "ARP spoofing detector program", long_about = None)]
 struct Cli {
 
     #[arg(short, long, default_value="tcp", help="Specifies which protocol to use. Can be tcp or udp (case sensitive)")]
