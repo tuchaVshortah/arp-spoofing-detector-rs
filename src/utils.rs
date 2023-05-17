@@ -1,5 +1,6 @@
 use std::str::{self, FromStr};
 use std::fmt::Display;
+use crate::cli::*;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Proto {
@@ -9,7 +10,7 @@ pub enum Proto {
 
 impl Default for Proto {
     fn default() -> Self {
-        Proto::Udp
+        Proto::Tcp
     }
 }
 
@@ -37,6 +38,11 @@ impl Display for Proto {
     }
 }
 
+pub trait FromCli {
+    
+    fn from_cli(cli: &Cli) -> Self;
+
+}
 
 pub struct LoggerOptions {
     //log levels
@@ -53,5 +59,40 @@ pub struct LoggerOptions {
     //local machine
     pub local_ip: String,
     pub local_port: String,
+
+    //time to sleep between requests to a syslog remote
+    pub timeout: f32,
+
+}
+
+impl Display for LoggerOptions {
+    
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+
+        if self.proto == Proto::Tcp {
+
+            write!(f, "{}", format!("--syslog-ip {} --syslog-port {} --proto {} --timeout {}", self.syslog_ip.as_str(), self.syslog_port.as_str(), self.proto, self.timeout.to_string().as_str()))
+
+        } else {
+
+            write!(f, "{}", format!("--syslog-ip {} --syslog-port {} --proto {} --local-ip {} --local-port {} --timeout {}", self.syslog_ip.as_str(), self.syslog_port.as_str(), self.proto, self.local_ip.as_str(), self.local_port.as_str(), self.timeout.to_string().as_str()))
+
+        }
+    }
+}
+
+impl FromCli for LoggerOptions {
+
+    fn from_cli(cli: &Cli) -> Self {
+
+        LoggerOptions {
+            syslog_ip: cli.syslog_ip.to_string().clone(),
+            syslog_port: cli.syslog_port.clone(),
+            proto: cli.proto,
+            local_ip: cli.local_ip.to_string().clone(),
+            local_port: cli.local_port.clone(),
+            timeout: cli.timeout,
+        }
+    }
 
 }
