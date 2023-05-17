@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::io::Write;
 use std::net::{Ipv4Addr, UdpSocket, TcpStream};
-use std::process::Command;
+use std::process::{Command, Output};
 use std::str::{self, FromStr};
 use std::fmt::Display;
 use clap::Parser;
@@ -9,6 +9,7 @@ use serde_json::json;
 
 #[allow(unused, unused_imports, unused_variables, dead_code)]
 
+fn decode_from_WINDOWS_1251(output: &Output) {}
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 enum Proto {
