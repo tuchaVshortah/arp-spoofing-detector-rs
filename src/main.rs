@@ -6,9 +6,9 @@ use std::str::{self, FromStr};
 use std::fmt::Display;
 use clap::Parser;
 use serde_json::json;
+use encoding_rs::*;
 
 #[allow(unused, unused_imports, unused_variables, dead_code)]
-
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 enum Proto {
@@ -126,7 +126,25 @@ fn detector(options: &LoggerOptions) {
         .output()
         .expect("Failed to execute command");
 
-    let arp_table = str::from_utf8(&output.stdout).unwrap();
+    let (cow, encoding_used, _) = UTF_8.decode(&output.stdout);
+    println!("Shell command output converted from: {}", encoding_used.name());
+    let arp_table = cow;
+
+    /*
+    let mut skip = false;
+
+    let arp_table = str::from_utf8(&output.stdout).unwrap_or_else(|err| {
+        eprintln!("Couldn't collect ARP data. Ensure your encoding is correct (UTF-8)");
+        eprintln!("Full Error: {}", err);
+        skip = true;
+        ""
+    });
+
+    if skip {
+        return;
+    }
+    */
+
     let mut is_spoofed = false;
 
     for line in arp_table.lines() {
@@ -181,7 +199,7 @@ fn detector(options: &LoggerOptions) {
 
 //structure that handles CLI arguments/flags
 #[derive(Parser)]
-#[command(author = "tuchaVshortah", version = "1.2.0", about = "ARP spoofing detector program", long_about = None)]
+#[command(author = "tuchaVshortah", version = "1.2.1", about = "ARP spoofing detector program", long_about = None)]
 struct Cli {
 
     #[arg(short, long, default_value="tcp", help="Specifies which protocol to use. Can be tcp or udp (case sensitive)")]
@@ -199,6 +217,8 @@ struct Cli {
     #[arg(long, default_value_t = String::from("9999"), help="Specifies the local port to use. Required when udp is used")]
     local_port: String,
 
+    #[arg(long, default_value_t = 3.0)]
+    timeout: f32,
 }
 
 //the main function
@@ -213,6 +233,9 @@ fn main() {
         local_port: cli.local_port,
     };
 
-    detector(&options);
+    loop {
+        detector(&options);
+        std::thread::sleep(std::time::Duration::from_secs_f32(cli.timeout));
+    }
 
 }
