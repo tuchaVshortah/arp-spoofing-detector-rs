@@ -6,6 +6,7 @@ use std::str::{self, FromStr};
 use std::fmt::Display;
 use clap::Parser;
 use serde_json::json;
+use encoding_rs::*;
 
 #[allow(unused, unused_imports, unused_variables, dead_code)]
 
@@ -126,7 +127,12 @@ fn detector(options: &LoggerOptions) {
         .arg("-a")
         .output()
         .expect("Failed to execute command");
-    
+
+    let (cow, encoding_used, _) = UTF_8.decode(&output.stdout);
+    println!("Shell command output converted from: {}", encoding_used.name());
+    let arp_table = cow;
+
+    /*
     let mut skip = false;
 
     let arp_table = str::from_utf8(&output.stdout).unwrap_or_else(|err| {
@@ -139,6 +145,7 @@ fn detector(options: &LoggerOptions) {
     if skip {
         return;
     }
+    */
 
     let mut is_spoofed = false;
 
