@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::io::Write;
 use std::net::{Ipv4Addr, UdpSocket, TcpStream};
-use std::process::{Command, Output};
+use std::process::Command;
 use std::str::{self, FromStr};
 use std::fmt::Display;
 use clap::Parser;
