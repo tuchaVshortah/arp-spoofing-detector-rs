@@ -29,13 +29,13 @@ pub fn run() -> Result<()> {
 // Generate the windows service boilerplate.
 // The boilerplate contains the low-level service entry function (ffi_service_main) that parses
 // incoming service arguments into Vec<OsString> and passes them to user defined service
-// entry (my_service_main).
-define_windows_service!(ffi_service_main, my_service_main);
+// entry (detector_service_main).
+define_windows_service!(ffi_service_main, detector_service_main);
 
 // Service entry function which is called on background thread by the system with service
 // parameters. There is no stdout or stderr at this point so make sure to configure the log
 // output to file if needed.
-pub fn my_service_main(_arguments: Vec<OsString>) {
+pub fn detector_service_main(_arguments: Vec<OsString>) {
     if let Err(_e) = run_service() {
         // Handle the error, by logging or something.
     }
