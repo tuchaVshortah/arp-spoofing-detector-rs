@@ -30,8 +30,8 @@ impl Display for Proto {
         
         match self {
 
-            Proto::Udp => write!(f, "Udp"),
-            Proto::Tcp => write!(f, "Tcp"),
+            Proto::Udp => write!(f, "udp"),
+            Proto::Tcp => write!(f, "tcp"),
 
         }
 
