@@ -5,7 +5,7 @@ use crate::utils::*;
 
 //structure that handles CLI arguments/flags
 #[derive(Parser)]
-#[command(author = "tuchaVshortah", version = "1.2.1", about = "ARP spoofing detector program", long_about = None)]
+#[command(author = "tuchaVshortah", version = "1.3.0", about = "ARP spoofing detector program", long_about = None)]
 pub struct Cli {
 
     #[arg(short, long, help="Installs ArpSpoofDetectService with launch arguments")]
