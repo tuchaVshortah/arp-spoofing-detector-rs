@@ -35,13 +35,13 @@ define_windows_service!(ffi_service_main, detector_service_main);
 // Service entry function which is called on background thread by the system with service
 // parameters. There is no stdout or stderr at this point so make sure to configure the log
 // output to file if needed.
-pub fn detector_service_main(_arguments: Vec<OsString>) {
+fn detector_service_main(_arguments: Vec<OsString>) {
     if let Err(_e) = run_service() {
         // Handle the error, by logging or something.
     }
 }
 
-pub fn run_service() -> Result<()> {
+fn run_service() -> Result<()> {
 
     // Create a channel to be able to poll a stop event from the service worker loop.
     let (shutdown_tx, shutdown_rx) = mpsc::channel();
