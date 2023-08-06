@@ -21,7 +21,7 @@ const SERVICE_NAME: &str = "ArpSpoofDetectService";
 const SERVICE_TYPE: ServiceType = ServiceType::OWN_PROCESS;
 
 pub fn run() -> Result<()> {
-    println!("Starting the service...")
+    println!("Starting the service...");
     // Register generated `ffi_service_main` with the system and start the service, blocking
     // this thread until the service is stopped.
     service_dispatcher::start(SERVICE_NAME, ffi_service_main)
