@@ -17,7 +17,12 @@ pub fn detector(options: &LoggerOptions) {
         .expect("Failed to execute command");
 
     let (cow, encoding_used, _) = UTF_8.decode(&output.stdout);
-    println!("Shell command output converted from: {}", encoding_used.name());
+
+    #[cfg(debug_assertions)]
+    {
+        println!("Shell command output converted from: {}", encoding_used.name());
+    }
+
     let arp_table = cow;
 
     /*
@@ -48,7 +53,11 @@ pub fn detector(options: &LoggerOptions) {
 
             if arp_cache.contains_key(&ip) && arp_cache.get(&ip).unwrap() != &mac {
 
-                println!("ARP spoofing detected for IP address {}", ip);
+                #[cfg(debug_assertions)]
+                {
+                    println!("ARP spoofing detected for IP address {}", ip);
+                }
+                
 
                 let mut message = HashMap::new();
                 message.insert("description", "ARP spoofing detected");
@@ -74,7 +83,10 @@ pub fn detector(options: &LoggerOptions) {
 
     if !is_spoofed {
 
-        println!("No ARP spoofing detected");
+        #[cfg(debug_assertions)]
+        {
+            println!("No ARP spoofing detected");
+        }
         
         let mut message = HashMap::new();
         message.insert("description", "ARP spoofing not detected");
