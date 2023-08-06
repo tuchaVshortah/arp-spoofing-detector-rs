@@ -9,7 +9,7 @@ use local::*;
 use winservice::{install_service, uninstall_service, syslog_service};
 use cli::*;
 
-#[allow(unused, unused_imports, unused_variables, dead_code)]
+#[cfg_attr(debug_assertions, allow(unused, unused_imports, unused_variables, dead_code))]
 
 //the main function
 fn main() -> Result<(), windows_service::Error> {
