@@ -27,7 +27,6 @@ fn main() -> Result<(), windows_service::Error> {
 
     } else if cli.run_service {
 
-        println!("Trying to start the service...");
         syslog_service::run()?;
         
     } else {
